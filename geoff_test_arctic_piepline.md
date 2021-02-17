@@ -174,3 +174,13 @@ MN908947.3      664     1004    3       1       +       59727   340     340     
 MN908947.3      965     1312    4       2       +       29940   347     347     1.0000000
 .... etc
 ```
+
+new script working
+1. must use python3
+2. runs bedtools coverage over the BAMs
+3. uses multhithreading (48 cores)
+4. creates a report in the root of the run folder 
+
+```bash
+geoffw@nbsvr484:~/sandpit/covid-extras$ sudo python3 coverage.py -r /mnt/NGS_DATA_at_Bristol/COVID/untailed_runs_1_and_2/
+```

@@ -56,6 +56,7 @@ unt_path = "untailed_runs_1_and_2/ncov2019-arctic-nf/ncovIllumina_sequenceAnalys
 suffix = ".primertrimmed.consensus.fa"
 
 if __name__ == "__main__":
+    os.chdir("/mnt/NGS_DATA_at_Bristol/COVID/")
     meta = loadMetadata()
     meta['tail_untail_identity'] = meta.apply(compareAll, 1)
 
