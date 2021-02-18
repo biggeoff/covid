@@ -61,6 +61,38 @@ geoffw@nbsvr484:~/sandpit/ncov2019-artic-nf$
 ```
 
 
+# Pangolin
 
+Lets install Pangolin in my sandpit for testing.
+
+```bash
+geoffw@nbsvr484:~/sandpit/$ cd pangolin
+geoffw@nbsvr484:~/sandpit/pangolin$ conda env create -f environment.yml
+geoffw@nbsvr484:~/sandpit/pangolin$ conda activate pangolin
+(pangolin) geoffw@nbsvr484:~/sandpit/pangolin$ python setup.py install
+```
+test
+```bash
+(pangolin) geoffw@nbsvr484:~/sandpit/pangolin$ pangolin -v
+pangolin 2.2.3
+(pangolin) geoffw@nbsvr484:~/sandpit/pangolin$ pangolin -pv
+pangoLEARN 2021-02-12
+(pangolin) geoffw@nbsvr484:~/sandpit/pangolin$ pangolin -lv
+usage: pangolin <query> [options]
+pangolin: error: unrecognized arguments: -lv
+```
+
+OK lets' create a fasta file for the latest run and test:
+```bash
+cd /largedata/share/MiSeqOutput2/210212_M03605_0232_000000000-JH582/ncov2019-arctic-nf/ncovIllumina_sequenceAnalysis_makeConsensus
+cat *.fa > all_tailed_run1.fa
+pangolin all_tailed_run1.fa
+```
+all working perfectly.
+
+
+```
+conda deactivate
+```
 
 
