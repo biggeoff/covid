@@ -10,7 +10,7 @@ def loadLineage(lineagecsv):
     df['Sample Name'] = df['taxon'].str.split('_').str[1].str.split("-").str[0]
     df['Well'] = df['taxon'].str.split('_').str[1].str.split("-").str[1]
     df = df[['Well', 'Sample Name', 'lineage']]
-    df.columns=['Well', 'Sample Name', r'Cт']
+    df.columns=['Well', 'Sample Name', 'C\xd1']
     return df
 
 
@@ -18,7 +18,7 @@ def parse2winpath(df):
     """ add columns required for winpath PCR upload 
     return df """
     cols=['Well', 'Sample Name', 'Target Name', 'Task', 
-        'Reporter', 'Quencher', 'Cт', 'Cт Mean', 'Cт SD', 
+        'Reporter', 'Quencher', 'C', 'C\xd1 Mean', 'C\xd1 SD', 
         'Quantity', 'Quantity Mean', 'Quantity SD', 
         'Automatic Ct Threshold', 'Ct Threshold', 
         'Automatic Baseline', 'Baseline Start', 
@@ -37,17 +37,17 @@ def parse2winpath(df):
     return df
 
 
-def emitCSV(df):
+def emitCSV(df, outfile):
     """ output parsed df and insert header above. """
-    output_csv = "test.csv"
-    df.to_csv(output_csv, header=None, index=False)
+    #output_csv = "test.csv"
+    df.to_csv(outfile, index=False)
     header=["* Block Type = 96fast", "* Chemistry = TAQMAN",
         r'* Experiment File Name = D:\Users\INSTR-ADMIN\Documents\2019-nCoV\20200402_nCOV_SSIII_Run-02rpt_ABI-07_YD.eds',
         "* Experiment Run End Time = 2020-04-02 17:53:33 PM BST",
         "* Instrument Type = sds7500fast",
         "* Passive Reference =\n\n[Results]"
     ]
-    with open(output_csv, 'r+') as f:
+    with open(outfile, 'r+') as f:
         content = f.read()
         f.seek(0, 0)
         f.write('\n'.join(header) + '\n' + content)
