@@ -103,7 +103,7 @@ cat * > pipeline_test_consensus.fa
 sudo cp pipeline_test_consensus.fa /RUN_FOLDERS/MiSeqOutput/210203_COVID_ENA/
 ```
 
-Tested access to CLIMB:
+# Tested access to CLIMB:
 ```
 geoffw@nbsvr484:~/$ cat test_upload.txt 
 testing connection from NBT NHS Trust - Geoff Woodward Bioinformatics from server NBSVR484 [10.229.248.19]
@@ -112,6 +112,7 @@ geoffw@nbsvr484:~/$ scp test_upload.txt climb-covid19-woodwardg@bham.covid19.cli
 test_upload.txt                                        100%  187   18.3KB/s    00:00
 ```
 
+# Temperature Optimisation
 Process the validation run to compare temperatures:
 
 ```
@@ -148,8 +149,9 @@ bcl2fastq -R /run -o /run/Data/Intensities/BaseCalls \
 --sample-sheet /run/SampleSheet.csv
 ```
 
+# Compare fasta sequences:
 
-Install BioPython...
+### Install BioPython...
 ```bash
 sudo -H pip3 install biopython
 cd /mnt/NGS_DATA_at_Bristol/COVID$
@@ -164,6 +166,7 @@ python ~/sandpit/compare_fasta.py
 
 checked through all the pipeline scripts there is no coverage calcualtion for each of the amplicons. hence the lack of output in the /work/ folder
 
+# Create Coverage data
 To generate coverage using bedtools:
 ```bash
 cd tailed_run_1
@@ -183,4 +186,88 @@ new script working
 
 ```bash
 geoffw@nbsvr484:~/sandpit/covid-extras$ sudo python3 coverage.py -r /mnt/NGS_DATA_at_Bristol/COVID/untailed_runs_1_and_2/
+```
+
+
+
+# Sort out Tailed_run_2 (96 plex)
+
+move the fq folder and remove existing folders:
+
+```
+mv Data/Intensities/BaseCalls/fqs/ Data/Intensities/BaseCalls/wrong_fqs/
+rm -r BRIS*
+rm -r 20V*
+```
+
+redemultiplex:
+
+```
+docker run -v /largedata/share/MiSeqOutput2/210220_M03605_0235_000000000-JH7K2/:/run/ \
+geoffw/centos_bcl2fastq2 \
+bcl2fastq -R /run -o /run/Data/Intensities/BaseCalls \
+--barcode-mismatches 0 --ignore-missing-bcls \
+--ignore-missing-filter --ignore-missing-positions \
+--sample-sheet /run/SampleSheet.csv
+```
+
+now run the arctic pipeline::
+
+```
+/largedata/share/MiSeqOutput2/210220_M03605_0235_000000000-JH7K2
+NXF_VER=20.10.0 nextflow run /home/geoffw/sandpit/ncov2019-artic-nf \
+-profile conda \
+--cache /home/geoffw/miniconda3/envs/artic-ncov2019-illumina/
+--illumina \
+--prefix "tailed_run2_fixed" \
+--ivarBed /fastdata/ncov2019-arctic/nCoV-2019/V3/nCoV-2019.bed \
+--alignerRefPrefix /fastdata/ncov2019-arctic/nCoV-2019/V3/nCoV-2019.reference.fasta \
+--directory /largedata/share/MiSeqOutput2/210220_M03605_0235_000000000-JH7K2/Data/Intensities/BaseCalls \
+--outdir /largedata/share/MiSeqOutput2/210220_M03605_0235_000000000-JH7K2/ncov2019-arctic-nf_FIXED
+
+```
+
+get the fa's together for pangolin:
+
+```
+cat ncov2019-arctic-nf_FIXED/ncovIllumina_sequenceAnalysis_makeConsensus/*fa > tailed_run2_fixed_all.fa
+conda activate pangolin
+pangolin ncovIllumina_sequenceAnalysis_makeConsensus/tailed_run2_fixed_all.fa 
+```
+
+now run the new verification script:
+
+```
+python ~/sandpit/covid-extras/compare_pangolin.py \
+-s SampleSheet.csv \
+-c ~/temp_cog/BRIS_cog_2021-02-25_metadata.csv \
+-p ./ncov2019-arctic-nf_FIXED/lineage_report.csv \
+-o verification.csv
+
+```
+
+there are a few issues but overall we have a very good level of concordance!
+
+```
+geoffw@nbsvr484:/largedata/share/MiSeqOutput2/210220_M03605_0235_000000000-JH7K2$ grep False verification.csv 
+4,BRIS-1855845,20V00299373,B.1.177.15,False,B.1.177
+35,20V00335341,20V00335341,B.1.177.15,False,NA
+36,20V00335341,20V00335341,B.1.177,False,NA
+37,BRIS-25CE90,20V00335709,B.1.258.7,False,B.1.160
+38,BRIS-25CF06,20V00335821,B.1.160,False,B.1.258.7
+53,BRIS-1856659,20V60170512,B.1.1.74,False,B.1.1.189
+54,BRIS-25AC4D,20V60171170,B.1,False,B.1.177
+83,BRIS-25A2C3,20V00306843,None,False,B.1.177
+84,BRIS-25A30C,20V00306981,None,False,B.1.177
+85,BRIS-25A1D5,20V00309548,None,False,B.1.1.311
+86,BRIS-25A1E4,20V00309636,None,False,B.1.177
+87,BRIS-25CBD5,20V00324573,None,False,B.1.177
+88,BRIS-25CB20,20V00332059,None,False,B.1.177
+89,BRIS-25CE81,20V00333775,None,False,B.1.177
+90,BRIS-25CEBE,20V00334302,None,False,B.1.177
+91,BRIS-25CECD,20V00334807,None,False,B.1.177
+92,BRIS-25CE36,20V00334872,None,False,B.1.177
+93,BRIS-25CEAF,20V00335312,None,False,B.1.177
+94,BRIS-1855B1F,20V60163241,None,False,B.1.160
+95,BRIS-25A21E,20V70232659,None,False,B.1.177.9
 ```

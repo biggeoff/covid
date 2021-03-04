@@ -6,7 +6,7 @@ import os
 import sys
 
 
-def loadDF(csv, heads=False):
+def loadDF(csv, heads=False, skip=0):
     """ 
     load CSV into DF 
     default with no header
@@ -14,9 +14,9 @@ def loadDF(csv, heads=False):
     """
     try:
         if heads:
-            df = pd.read_csv(csv)
+            df = pd.read_csv(csv, skiprows=skip)
         else:
-            df = pd.read_csv(csv, header=None)
+            df = pd.read_csv(csv, header=None, skiprows=skip)
     except:
         print("Problem loading COG metadata file, ensure full path supplied with -c/--cog")
         sys.exit()
@@ -39,13 +39,25 @@ def prepareCog(df):
     return df
 
 
-def preparePang(df):
+def lookupCOGID(row, ss):
+    """
+    find COG-ID from SampleSheet
+    """
+    match = match=ss[ss['Sample_ID'] == row['WINPATH_ID']]
+    if match.size == 0:
+        return row['WINPATH_ID']
+    else:
+        return match.iloc[0,9]
+
+
+def preparePang(df, ss):
     """ 
     parse df down to ID and lineage 
     """
-    df['COG_ID'] = pang['taxon'].str.split('_').str[1].str.split('-').str[:-1].str.join('-')
+    df['WINPATH_ID'] = df['taxon'].str.split('_').str[1].str.split('-').str[:-1].str.join('-')
     #fuck me that's a complicated line :-D
-    keep=['COG_ID', 'lineage']  
+    df['COG_ID'] = df.apply(lookupCOGID, 1, args=(ss,))
+    keep=['COG_ID', 'WINPATH_ID', 'lineage']  
     df = df.reindex(columns=keep)
     return df
 
@@ -77,19 +89,24 @@ def printSummary(df):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("-s", "--samplesheet", nargs=1, type=str, help="full path to SampleSheet (with lims and climb IDs)", required=True)
     parser.add_argument("-c", "--cog", nargs=1, type=str, help="full path to COG metadata download", required=True)
     parser.add_argument("-p", "--pangolin", nargs=1, type=str, help="full path to pangolin output", required=True)
     parser.add_argument("-o", "--output", nargs=1, type=str, help="full path to output results of the comparison to", required=True)
     args = parser.parse_args()
 
+    ss = loadDF(args.samplesheet[0], heads=True, skip=19)
     cog = loadDF(args.cog[0], heads=False)
     pang = loadDF(args.pangolin[0], heads=True)
 
-    #cog = loadDF("/home/geoffw/temp_cog/BRIS_cog_2021-02-25_metadata.csv")
+    # testing
+    #ss = loadDF('/largedata/share/MiSeqOutput2/210220_M03605_0235_000000000-JH7K2/SampleSheet.csv', heads=True, skip=19)
+    #cog = loadDF("/home/geoffw/temp_cog/BRIS_cog_2021-02-25_metadata.csv", heads=False)
+    #pang = loadDF('/largedata/share/MiSeqOutput2/210220_M03605_0235_000000000-JH7K2/ncov2019-arctic-nf_FIXED/lineage_report.csv', heads=True)
+
     cog = prepareCog(cog)
-    #rep='/largedata/share/MiSeqOutput2/210220_M03605_0235_000000000-JH7K2/ncov2019-arctic-nf/ncovIllumina_sequenceAnalysis_makeConsensus/lineage_report.csv'
-    #pang = loadDF(rep, True)
-    pang = preparePang(pang)
+    pang = preparePang(pang, ss)
+
     pang[['cog_lineage', 'match']] = pang.apply(compareLineage, 1, args=(cog,))
     printSummary(pang)
     pang.to_csv(args.output[0])
