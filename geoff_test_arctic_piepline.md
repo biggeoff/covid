@@ -271,3 +271,87 @@ geoffw@nbsvr484:/largedata/share/MiSeqOutput2/210220_M03605_0235_000000000-JH7K2
 94,BRIS-1855B1F,20V60163241,None,False,B.1.160
 95,BRIS-25A21E,20V70232659,None,False,B.1.177.9
 ```
+
+# 384 plex run 
+## Tailed runs 2,3,4 + 5:
+
+Rsync and Save the new samplesheet:
+```
+rsync -azvP --include "*/" --include "*xml" \
+--include "*csv" --include "*txt" --include "*bin" \
+--include "*bcl" --include **"*bci"** --exclude "*" \
+/RUN_FOLDERS/MiSeqOutput2/210302_M03605_0237_000000000-JJDN8 /largedata/share/MiSeqOutput2/
+
+cd /largedata/share/MiSeqOutput2/210302_M03605_0237_000000000-JJDN8/
+mv SampleSheet.csv SampleSheet.csv.wrong
+cp /mnt/K/01\ NGS/NGS\ Validations/COVID-19\ ARTIC\ v3/Validation/Tailed\ Run\ 2-5\ replacement.csv .
+cp Tailed\ Run\ 2-5\ replacement.csv SampleSheet.csv
+```
+
+### Re-demux:
+
+```
+docker run -v /largedata/share/MiSeqOutput2/210302_M03605_0237_000000000-JJDN8/:/run/ \
+geoffw/centos_bcl2fastq2 \
+bcl2fastq -R /run -o /run/Data/Intensities/BaseCalls \
+--barcode-mismatches 0 --ignore-missing-bcls \
+--ignore-missing-filter --ignore-missing-positions \
+--sample-sheet /run/SampleSheet.csv
+```
+
+### Run the pipeline:
+```
+NXF_VER=20.10.0 nextflow run /home/geoffw/sandpit/ncov2019-artic-nf \
+-profile conda \
+--cache /home/geoffw/miniconda3/envs/artic-ncov2019-illumina/ \
+--illumina \
+--prefix "tailed_runs_2-5" \
+--ivarBed /fastdata/ncov2019-arctic/nCoV-2019/V3/nCoV-2019.bed \
+--alignerRefPrefix /fastdata/ncov2019-arctic/nCoV-2019/V3/nCoV-2019.reference.fasta \
+--directory /largedata/share/MiSeqOutput2/210302_M03605_0237_000000000-JJDN8/Data/Intensities/BaseCalls \
+--outdir /largedata/share/MiSeqOutput2/210302_M03605_0237_000000000-JJDN8/ncov2019-arctic-nf
+
+Completed at: 05-Mar-2021 13:18:57
+Duration    : 8m 7s
+CPU hours   : 12.7
+Succeeded   : 2'608
+```
+**Super FAST!!** set queue to 48 but it still went very quickly - unsure if throttling possible as Matt said.
+
+get the fa's together for pangolin:
+
+```
+cat ncov2019-arctic-nf/ncovIllumina_sequenceAnalysis_makeConsensus/*fa > tailed_runs_2-5_all.fa
+conda activate pangolin
+pangolin tailed_runs_2-5_all.fa
+conda deactivate
+```
+
+now run the new verification script:
+
+```
+python ~/sandpit/covid-extras/compare_pangolin.py \
+-s SampleSheet.csv \
+-c ~/temp_cog/BRIS_cog_2021-02-25_metadata.csv \
+-p lineage_report.csv \
+-o verification.csv
+
+```
+
+OK we have issues with the samples names - to avoid replicate names in the SS they've added a PREFIX!!
+this needs to be removed for the verification to work correctly!
+* Extra function to parse COG_ID in samplesheet to remove prefix to allow matching
+* Added QC as well to improve level of information
+
+re-ran the verification script after fixing then...
+copied to network
+
+```
+python ~/sandpit/covid-extras/compare_pangolin.py -s SampleSheet.csv -c ~/temp_cog/BRIS_cog_2021-02-25_metadata.csv -p lineage_report.csv -q ncov2019-arctic-nf/tailed_runs_2-5.qc.csv -o verification.csv
+Matches = 304
+Errors = 76
+
+sudo mkdir /mnt/NGS_DATA_at_Bristol/COVID/tailed_runs_2-5
+sudo cp -r ncov2019-arctic-nf/ /mnt/NGS_DATA_at_Bristol/COVID/tailed_runs_2-5/.
+sudo cp lineage_report.csv /mnt/NGS_DATA_at_Bristol/COVID/tailed_runs_2-5/.
+sudo cp verification.csv /mnt/NGS_DATA_at_Bristol/COVID/tailed_runs_2-5/.
