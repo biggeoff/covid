@@ -355,3 +355,15 @@ sudo mkdir /mnt/NGS_DATA_at_Bristol/COVID/tailed_runs_2-5
 sudo cp -r ncov2019-arctic-nf/ /mnt/NGS_DATA_at_Bristol/COVID/tailed_runs_2-5/.
 sudo cp lineage_report.csv /mnt/NGS_DATA_at_Bristol/COVID/tailed_runs_2-5/.
 sudo cp verification.csv /mnt/NGS_DATA_at_Bristol/COVID/tailed_runs_2-5/.
+```
+
+plot a boxplot of coverage vs match status!!
+
+```python3
+import pandas as pd
+import matplotlib.pyplot as plt
+df=pd.read_csv('verification.csv')
+df.boxplot(by='match', column=['pct_covered_bases'])
+plt.savefig('myplot.png')
+```
+
