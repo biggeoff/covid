@@ -367,3 +367,82 @@ df.boxplot(by='match', column=['pct_covered_bases'])
 plt.savefig('myplot.png')
 ```
 
+## 4 failures:
+Plan
+1) download fastqs
+2) run pipeline
+3) compare fastas
+4) run fastQC - has the sample degraded?
+5) run my QC script to make summary
+6) write script to get insert size from BAMS
+
+### Cases to Download from ENA
+
+* BRIS-1855845 (56%) BRIS-1855845 (90%) [B.1.177.15 better] ena_files.zip [ERR5077407]
+* BRIS-1855B5B (59%) BRIS-1855B5B (63%) BRIS-1855B5B (64%) [B.1.1.74 -> B.1.1.151] ena_files(1).zip [ERR5081183]
+* BRIS-1856659 (99%) BRIS-1856659 (99%) BRIS-1856659 (99%) BRIS-1856659 (99%) [B.1.1.74 -> B.1.1.189] ena_files(2).zip [ERR5070329]
+* BRIS-25AC4D (67%) ena_files(3).zip [ERR4839203]
+
+Copied to here:
+* L:\Genetics\Analyser Data\Sequencing Data\NGS_DATA_at_Bristol\COVID\verification
+
+
+### FastQC
+run: sudo python
+```python3
+import os
+import subprocess
+import multithreading.dummy
+
+FASTQC_CONTAINER = "geoffw/fastqc0.11.4"
+FASTQC_EXE = "fastqc"
+FASTQC_VERSION = "v0.11.4"
+
+run_dir='/largedata/share/MiSeqOutput2/210302_M03605_0237_000000000-JJDN8'
+mnts = "-v {}:/run".format(run_dir) 
+files = os.listdir(os.path.join(run_dir, "Data/Intensities/BaseCalls"))
+for fq in [fq for fq in files if fq.endswith("fastq.gz") and not fq.startswith("Undetermined")]:
+      fastq = "/run/Data/Intensities/BaseCalls/"+fq
+      cmd = "docker run "+mnts+" "+FASTQC_CONTAINER+" "+FASTQC_EXE+" "+fastq
+      cmd +=" --outdir /run/FastQC"
+      subprocess.call([ cmd ], shell=True)
+```
+
+
+## Get insert size
+samtools flagstat
+
+Run this over all BAM files!!!!!
+```
+sudo docker run --rm \
+-v "$(pwd)":/run/ \
+-v /fastdata/ncov2019-arctic/SARS-CoV-2/V3:/ref/ \
+geoffw/picard1.67 \
+java -jar /picard-tools-1.67/CollectInsertSizeMetrics.jar \
+I=/run/4-20V80022587-E7_S230_L001.sorted.bam \
+R=/ref/nCoV-2019.reference.fasta \
+H=/run/4-20V80022587-E7_S230_L001.hist \
+O=/run/4-20V80022587-E7_S230_L001.txt
+```
+
+Created a new sript to run this in parallel BOOOOOOOOM!!
+
+```
+python3 ~/sandpit/covid-extras/picard.py -a /largedata/share/MiSeqOutput2/210302_M03605_0237_000000000-JJDN8/ncov2019-arctic-nf/ncovIllumina_sequenceAnalysis_readMapping/ -o insert_report.txt
+```
+
+now merge with other data:
+
+```python3
+import pandas as pd
+run="/largedata/share/MiSeqOutput2/210302_M03605_0237_000000000-JJDN8"
+insert=pd.read_csv(run+"/insert_report.txt")
+ver=pd.read_csv(run+"/verification.csv")
+final = pd.merge(left=ver, right=insert, left_on='WINPATH_ID', right_on='case')
+del final['Unnamed: 0_x']
+del final['Unnamed: 0_y']
+final.to_csv("", index=False)
+```
+
+
+
