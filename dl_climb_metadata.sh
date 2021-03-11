@@ -5,6 +5,6 @@ scp climb-covid19-woodwardg@bham.covid19.climb.ac.uk:/cephfs/covid/bham/results/
 for csvfile in *.csv
 do
     echo "Processing ${csvfile}"
-    grep BRIS $csvfile > "BRIS_"${datestamp}"_"${csvfile}
+    grep BRIS $csvfile > "BRIS_"${csvfile}
 done
 # copy to network completed by separate cronjob run by root in 15 minutes.
