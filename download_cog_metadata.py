@@ -93,23 +93,73 @@ def getDeletedRows(new, prev):
     return deleted
 
 
+def parseNew2winpath(df):
+    """ add columns required for winpath PCR upload 
+    return df """
+    df = df[df.STATUS.isin(['NEW', 'AMENDED'])]
+    df = df.reset_index()
+    df = df.drop('index',1)
+    df = df[['COG-UK_ID', 'lineage']]
+    df.columns=['Sample Name', u'C\u0442']
+
+    cols=['Well', 'Sample Name', 'Target Name', 'Task', 
+        'Reporter', 'Quencher', u'C\u0442', u'C\u0442 Mean', u'C\u0442 SD', 
+        'Quantity', 'Quantity Mean', 'Quantity SD', 
+        'Automatic Ct Threshold', 'Ct Threshold', 
+        'Automatic Baseline', 'Baseline Start', 
+        'Baseline End', 'Comments'
+    ]
+    df = df.reindex(columns=cols, fill_value='')
+    df['row'] = (df.index // 8 % 8 + 1)
+    df['col'] = (df.index % 12 + 1)
+    df['row'] = df['row'].apply(lambda x: chr(ord('@')+x))
+    df['Well']=df.row+df.col.astype(str)
+    df = df.drop('row',1)
+    df = df.drop('col',1)
+    df['Baseline Start']=8
+    df['Baseline End']=18
+    df['Automatic Baseline']='FALSE'
+    df['Ct Threshold']=df.index+40000
+    df['Automatic Ct Threshold']='FALSE'
+    df['Quencher']='None'
+    df['Reporter']='FAM'
+    df['Task']='UNKNOWN'
+    df['Target Name']='COGUK'
+    return df
+
+
+def emitABItsv(df, outfile):
+    """ output parsed df and insert header above. """
+    df.to_csv(outfile, index=False, sep="\t", encoding='utf-8')
+    header=["* Block Type = 96fast", "* Chemistry = TAQMAN",
+        r'* Experiment File Name = D:\Users\INSTR-ADMIN\Documents\2019-nCoV\20200402_nCOV_SSIII_Run-02rpt_ABI-07_YD.eds',
+        "* Experiment Run End Time = 2020-04-02 17:53:33 PM BST",
+        "* Instrument Type = sds7500fast",
+        "* Passive Reference =\n\n[Results]"
+    ]
+    with open(outfile, 'r+') as f:
+        content = f.read()
+        f.seek(0, 0)
+        f.write('\n'.join(header) + '\n' + content)
+
 if __name__ == "__main__":
 
-meta_dir='/home/geoffw/temp_cog/'
+    meta_dir='/home/geoffw/temp_cog/'
+    downloadMeta(meta_dir)
 
-downloadMeta(meta_dir)
+    newfile, new, prev = loadMeta(meta_dir)
+    lookup = loadSampleIDmap(os.path.join(meta_dir, "COGUK_ID_lookup.csv"))
+    new = parseMeta(new, lookup)
+    prev = parseMeta(prev, lookup)
+    new = new[new.sequence_name.str.contains("BRIS")]
+    prev = prev[prev.sequence_name.str.contains("BRIS")]
 
-newfile, new, prev = loadMeta(meta_dir)
-lookup = loadSampleIDmap(os.path.join(meta_dir, "COGUK_ID_lookup.csv"))
-new = parseMeta(new, lookup)
-prev = parseMeta(prev, lookup)
-new = new[new.sequence_name.str.contains("BRIS")]
-prev = prev[prev.sequence_name.str.contains("BRIS")]
+    deleted = getDeletedRows(new, prev)
+    new['STATUS'] = new.apply(checkRowMatches, 1, args=(prev, ))
+    final = new.append(deleted)
+    final.to_csv(newfile.replace('.csv','_with_IDs.csv'), index=False)
 
-deleted = getDeletedRows(new, prev)
-new['STATUS'] = new.apply(checkRowMatches, 1, args=(prev, ))
-final = new.append(deleted)
-final.to_csv(newfile.replace('.csv','_with_IDs.csv'), index=False)
-
-final = createWinPathtemplate(newsamples)
-copyToSampleNet(final)
+    abi = parseNew2winpath(final)
+    emitABItsv(abi, newfile.replace('.csv','_for_ABI.tsv'))
+    
+    #copyToSampleNet(abi)
