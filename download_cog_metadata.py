@@ -21,7 +21,7 @@ def loadMeta(outdir):
     Load all CSV files in outdir
     return newest and previous as tuple
     """
-    allmetas = glob(outdir+"cog*csv")
+    allmetas = glob(outdir+"cog*metadata.csv")
     new_file = allmetas[-1]
     previous_file = allmetas[-2]
     new = pd.read_csv(new_file)
@@ -59,8 +59,8 @@ def parseMeta(df, lookup):
      - drop lineage_support column which causes mismatches
     """
     df = df[df.sequence_name.str.contains("BRIS")]
-    df['COG-UK_ID'] = df['sequence_name'].str.split('/').str[1]
-    df['Winpath_ID'] = df.apply(lookupWinpathID, 1, args=(lookup,))
+    df.loc[:,'COG-UK_ID'] = df['sequence_name'].str.split('/').str[1]
+    df.loc[:,'Winpath_ID'] = df.apply(lookupWinpathID, 1, args=(lookup,))
     df = df.drop('lineage_support', 1)
     return df
 
@@ -89,7 +89,7 @@ def getDeletedRows(new, prev):
     unique = compare_df.getUniqueRecords(new, prev)
     deleted=unique[unique.Dataframe=="right_only"]
     deleted=deleted.drop('Dataframe', 1)
-    deleted['STATUS'] = "DELETED"
+    deleted.loc[:,'STATUS'] = "DELETED"
     return deleted
 
 
@@ -99,9 +99,9 @@ def parseNew2winpath(df):
     df = df[df.STATUS.isin(['NEW', 'AMENDED'])]
     df = df.reset_index()
     df = df.drop('index',1)
-    df = df[['COG-UK_ID', 'lineage']]
+    df = df[['Winpath_ID', 'lineage']]
+    #df.loc[df.lineage.isna(), 'lineage'] = "No lineage assigned"
     df.columns=['Sample Name', u'C\u0442']
-
     cols=['Well', 'Sample Name', 'Target Name', 'Task', 
         'Reporter', 'Quencher', u'C\u0442', u'C\u0442 Mean', u'C\u0442 SD', 
         'Quantity', 'Quantity Mean', 'Quantity SD', 
@@ -113,7 +113,7 @@ def parseNew2winpath(df):
     df['row'] = (df.index // 8 % 8 + 1)
     df['col'] = (df.index % 12 + 1)
     df['row'] = df['row'].apply(lambda x: chr(ord('@')+x))
-    df['Well']=df.row+df.col.astype(str)
+    df['Well'] = df.row+df.col.astype(str)
     df = df.drop('row',1)
     df = df.drop('col',1)
     df['Baseline Start']=8
@@ -141,6 +141,7 @@ def emitABItsv(df, outfile):
         content = f.read()
         f.seek(0, 0)
         f.write('\n'.join(header) + '\n' + content)
+
 
 if __name__ == "__main__":
 
