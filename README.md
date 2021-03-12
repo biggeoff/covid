@@ -40,6 +40,27 @@ geoffw@nbsvr484:ncovIllumina_sequenceAnalysis_makeConsensus$ cat *.fa > all_tail
 geoffw@nbsvr484:ncovIllumina_sequenceAnalysis_makeConsensus$ pangolin all_tailed_run1.fa
 ```
 
+## Compare lineages against COG:
+fasta comparison requires local copies of the fastas.
+A quicker comparison checks out classifcation against the downloaded CLIMB metadata. This script also munges together the QC data to provide a much richer source of data for `validation`
+
+```
+geoffw@nbsvr484:covid-extras$ python compare_pangolin.py --help
+usage: compare_pangolin.py [-h] -s SAMPLESHEET -c COG -p PANGOLIN -q QC -o
+                           OUTPUT
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -s SAMPLESHEET, --samplesheet SAMPLESHEET
+                        full path to SampleSheet (with lims and climb IDs)
+  -c COG, --cog COG     full path to COG metadata download
+  -p PANGOLIN, --pangolin PANGOLIN
+                        full path to pangolin output
+  -q QC, --qc QC        full path to qc output from pipeline
+  -o OUTPUT, --output OUTPUT
+                        full path to output results of the comparison to
+```
+
 ### Convert the lineage output to ABI spec for upload to WinPath:
 
 
@@ -58,3 +79,18 @@ optional arguments:
 geoffw@nbsvr484:covid-extras$ python lineage2winpath.py -l /largedata/share/MiSeqOutput2/210212_M03605_0232_000000000-JH582/ncov2019-arctic-nf/ncovIllumina_sequenceAnalysis_makeConsensus/lineage_report.csv -o /largedata/share/MiSeqOutput2/210212_M03605_0232_000000000-JH582/ncov2019-arctic-nf/ncovIllumina_sequenceAnalysis_makeConsensus/testy_test.txt
 ```
 
+# Run Extras
+
+To enrich QC information on cases a small supplementary pipeline has been made. This script leverages: `Picard` and `NextClade`:
+
+```
+geoffw@nbsvr484:covid-extras$ python run_extras.py --help
+usage: run_extras.py [-h] -a ARCTIC -o OUTPUT
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -a ARCTIC, --arctic ARCTIC
+                        full path to artice pipeline output folder
+  -o OUTPUT, --output OUTPUT
+                        output csv filename including full path
+```

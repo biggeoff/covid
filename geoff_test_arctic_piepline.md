@@ -441,8 +441,70 @@ ver=pd.read_csv(run+"/verification.csv")
 final = pd.merge(left=ver, right=insert, left_on='WINPATH_ID', right_on='case')
 del final['Unnamed: 0_x']
 del final['Unnamed: 0_y']
-final.to_csv("", index=False)
+final.to_csv(run+"/verification_insert.csv", index=False)
 ```
+
+# Plot correlation
+```python3
+import pandas as pd
+import matplotlib.pyplot as plt
+df=pd.read_csv('verification_insert.csv')
+df['colour']="Red"
+df.loc[df.qc_pass==True, 'colour']="Green"
+df.plot.scatter(y='MEDIAN_INSERT_SIZE', x='pct_covered_bases', c=df.colour)
+plt.savefig('insert_coverage_scatter.png')
+```
+
+# Follow up Lineage mismatches!
+
+### Create fasta file to investigate sample swap
+
+```
+cat verification/96plate_validation/BRIS-25CF06* > sample_swap_investigation.fa
+cat tailed_runs_2-5/ncov2019-arctic-nf/ncovIllumina_sequenceAnalysis_makeConsensus/*20V00335709* >> sample_swap_investigation.fa
+cat verification/96plate_validation/BRIS-25CE90* >> sample_swap_investigation.fa
+cat tailed_runs_2-5/ncov2019-arctic-nf/ncovIllumina_sequenceAnalysis_makeConsensus/*20V00335821* >> sample_swap_investigation.fa
+```
+
+### Create Other 4 fasta files for investigation:
+
+```
+cat verification/96plate_validation/BRIS-1855B5B* > BRIS-1855B5B_investigation.fa
+cat tailed_runs_2-5/ncov2019-arctic-nf/ncovIllumina_sequenceAnalysis_makeConsensus/*20V60165216* >> BRIS-1855B5B_investigation.fa
+cat verification/96plate_validation/BRIS-1856659* > BRIS-1856659_investigation.fa
+cat tailed_runs_2-5/ncov2019-arctic-nf/ncovIllumina_sequenceAnalysis_makeConsensus/*20V60170512* >> BRIS-1856659_investigation.fa
+cat verification/96plate_validation/BRIS-1855845* > BRIS-1855845_investigation.fa
+cat tailed_runs_2-5/ncov2019-arctic-nf/ncovIllumina_sequenceAnalysis_makeConsensus/*20V00299373* >> BRIS-1855845_investigation.fa
+cat verification/96plate_validation/BRIS-25AC4D* > BRIS-25AC4D_investigation.fa
+cat tailed_runs_2-5/ncov2019-arctic-nf/ncovIllumina_sequenceAnalysis_makeConsensus/*20V60171170* >> BRIS-25AC4D_investigation.fa
+```
+
+> uploaded to: https://clades.nextstrain.org/
+
+Updated the Excel workbook
+
+### follow up BRIS-1856659 mismatch
+
+Our 4 replicates are high quality and assigned B.1.1.74
+however the data from Steph states a lineage of B.1.1.189
+run locally with the fasta to check:
+
+```
+conda activate pangolin
+pangolin BRIS-1856659_investigation.fa
+conda deactivate
+```
+
+__Reference comes back as B.1.1.74 same as our samples!!__
+Have checked the COG-UK metadata - and this means it must have been uploaded incorrectly!
+
+# MetaData
+
+1) New data parsed
+2) Everything with Lab numbers (20V....)
+3) log of interesting strains
+4) 
+
 
 
 

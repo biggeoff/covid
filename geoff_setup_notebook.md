@@ -95,4 +95,25 @@ all working perfectly.
 conda deactivate
 ```
 
+# NextClade
+
+further QC information can be gleaned from nextclade
+we have used the online version for genome visualisation to help with validation
+
+> docker pull nextstrain/nextclade
+
+test run:
+
+```
+docker run --rm \
+-v /mnt/NGS_DATA_at_Bristol/COVID/tailed_runs_2-5/ncov2019-arctic-nf/ncovIllumina_sequenceAnalysis_makeConsensus/:/in/ \
+-v /mnt/NGS_DATA_at_Bristol/COVID/tailed_runs_2-5/nextclade/:/out/ \
+nextstrain/nextclade nextclade \
+-i '/in/4-20V80022587-E7_S230_L001.primertrimmed.consensus.fa' \
+-o '/out/4-20V80022587_nextclade.json'
+```
+
+# Something for the key spike protein mutations?
+
+what tools?
 
