@@ -22,6 +22,7 @@ def loadMeta(outdir):
     return newest and previous as tuple
     """
     allmetas = glob(outdir+"cog*metadata.csv")
+    allmetas.sort()
     new_file = allmetas[-1]
     previous_file = allmetas[-2]
     new = pd.read_csv(new_file)
@@ -162,5 +163,5 @@ if __name__ == "__main__":
 
     abi = parseNew2winpath(final)
     emitABItsv(abi, newfile.replace('.csv','_for_ABI.tsv'))
-    
+
     #copyToSampleNet(abi)
