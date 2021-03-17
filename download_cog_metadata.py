@@ -162,6 +162,6 @@ if __name__ == "__main__":
     final.to_csv(newfile.replace('.csv','_with_IDs.csv'), index=False)
 
     abi = parseNew2winpath(final)
-    emitABItsv(abi, newfile.replace('.csv','_for_ABI.tsv'))
+    emitABItsv(abi, newfile.replace('.csv','_for_ABI.txt'))
 
     #copyToSampleNet(abi)
