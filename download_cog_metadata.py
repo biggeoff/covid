@@ -5,7 +5,7 @@ import subprocess
 from glob import glob
 import pandas as pd
 import compare_df
-
+from shutil import copyfile
 
 def downloadMeta(outdir):
     """
@@ -129,7 +129,7 @@ def parseNew2winpath(df):
     return df
 
 
-def emitABItsv(df, outfile):
+def emitABItxt(df, outfile):
     """ output parsed df and insert header above. """
     df.to_csv(outfile, index=False, sep="\t", encoding='utf-8')
     header=["* Block Type = 96fast", "* Chemistry = TAQMAN",
@@ -142,6 +142,14 @@ def emitABItsv(df, outfile):
         content = f.read()
         f.seek(0, 0)
         f.write('\n'.join(header) + '\n' + content)
+
+
+def copyToSampleNet(abi):
+    try:
+        copyfile(abi,
+            "/mnt/PHEwinpath/fftransfer/ABI7500_1/{}".format(abi)) 
+    except: 
+        print("Error occurred while copying file.") 
 
 
 if __name__ == "__main__":
@@ -162,6 +170,6 @@ if __name__ == "__main__":
     final.to_csv(newfile.replace('.csv','_with_IDs.csv'), index=False)
 
     abi = parseNew2winpath(final)
-    emitABItsv(abi, newfile.replace('.csv','_for_ABI.txt'))
+    emitABItxt(abi, newfile.replace('.csv','_for_ABI.txt'))
 
-    #copyToSampleNet(abi)
+    #copyToSampleNet(newfile.replace('.csv','_for_ABI.txt'))
