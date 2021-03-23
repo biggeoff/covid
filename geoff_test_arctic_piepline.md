@@ -508,3 +508,39 @@ Have checked the COG-UK metadata - and this means it must have been uploaded inc
 
 
 
+# LATEST RUN - Exeter parallel run:
+
+fucking samplesheet!!!!!
+demux'd onboard the miseq with the winpath names not the COG ids.
+
+```
+NXF_VER=20.10.0 nextflow run /home/geoffw/sandpit/ncov2019-artic-nf \
+-profile conda \
+--cache /home/geoffw/miniconda3/envs/artic-ncov2019-illumina/ \
+--illumina \
+--prefix "20210309" \
+--ivarBed /fastdata/ncov2019-arctic/nCoV-2019/V3/nCoV-2019.bed \
+--alignerRefPrefix /fastdata/ncov2019-arctic/nCoV-2019/V3/nCoV-2019.reference.fasta \
+--directory /largedata/share/MiSeqOutput2/210319_M03605_0243_000000000-JJDPJ/ \
+--outdir /largedata/share/MiSeqOutput2/210319_M03605_0243_000000000-JJDPJ/ncov2019-arctic-nf
+```
+
+pangolin:
+
+```
+conda activate pangolin
+cd /largedata/share/MiSeqOutput2/210319_M03605_0243_000000000-JJDPJ/ncov2019-arctic-nf/
+cat ncovIllumina_sequenceAnalysis_makeConsensus/*fa > ncovIllumina_sequenceAnalysis_makeConsensus/20210309_all.fa
+pangolin ncovIllumina_sequenceAnalysis_makeConsensus/20210309_all.fa
+conda deactivate
+mv lineage_report.csv 20210309_lineage_report.csv
+```
+
+Run Picard / NextClade with new script (finish making it!!)
+> this took all day to finish.
+> still impossible to run conda from within python although getting close
+
+```
+sudo python3 ~/sandpit/covid-extras/run_extras.py -a ncov2019-arctic-nf -w 20210309
+```
+

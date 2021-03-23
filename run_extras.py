@@ -64,7 +64,7 @@ def runNextClade(row):
     cmd += '-i /in/'+fa+' '
     cmd += '-o /out/'+case+'_nextclade.json '
     print("processing {}".format(case))
-    #subprocess.run(cmd, shell=True)
+    subprocess.run(cmd, shell=True)
 
 
 def runPicard(row):
@@ -80,7 +80,7 @@ def runPicard(row):
     cmd += "H=/out/"+case+".hist "
     cmd += "O=/out/"+case+".txt"
     print("processing {}".format(case))
-    #subprocess.run(cmd, shell=True)
+    subprocess.run(cmd, shell=True)
 
 
 def parsePicard(bam_map):
