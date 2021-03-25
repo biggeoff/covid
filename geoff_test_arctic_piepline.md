@@ -544,3 +544,10 @@ Run Picard / NextClade with new script (finish making it!!)
 sudo python3 ~/sandpit/covid-extras/run_extras.py -a ncov2019-arctic-nf -w 20210309
 ```
 
+munge this with the CT data and plot:
+incorporated sklearn for linear regression and better plots.
+
+```bash
+python3 CT_value_investigation.py
+```
+

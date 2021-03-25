@@ -39,10 +39,16 @@ def preexec_fn():
     os.setuid(1005)
 
 
+def prepareFastas(run_dir, worklist):
+    fa_dir=os.path.join(run_dir, "ncovIllumina_sequenceAnalysis_makeConsensus")
+    cmd['cat', os.path.join(fa_dir,'*fa'), '>', 
+        os.path.join(fa_dir, worklist+'_all.fa')]
+    subprocess.run(cmd, shell=True, executable='/bin/bash')
+
+
 def runPangolinPOP(run_dir, worklist):
     """ NEED to set up PANGOLIN for ALL users 
     THIS DOES NOT WORK!!!! """
-    #cmd['cat', 'ncovIllumina_sequenceAnalysis_makeConsensus/*fa', '>', worklist+'_all.fa']
     fa=os.path.join(run_dir, "ncovIllumina_sequenceAnalysis_makeConsensus", worklist+'_all.fa')
     out=os.path.join(run_dir, worklist+'_lineage_report.csv')
     cmd = ['conda', 'run', '-n', 'pangolin', 
