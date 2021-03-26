@@ -73,6 +73,22 @@ def runNextClade(row):
     subprocess.run(cmd, shell=True)
 
 
+def runCovert(run_dir, worklist)
+    config='/home/geoffs/sandpit/type_variants/arctic_config.csv'
+    ref='/home/geoffs/sandpit/type_variants/MN908947.fa'
+    out=os.path.join(run_dir, worklist+'_covert.csv')
+    fa=os.path.join(run_dir, "ncovIllumina_sequenceAnalysis_makeConsensus", worklist+'_all.fa')
+    cmd['python3', 'type_variants.py', '--append-genotypes',
+        '--fasta-in', fa,
+        '--variants-config', config,
+        '--reference', ref,
+        '--variants-out', out
+    ]
+    print("processing {}".format(case))
+    subprocess.run(cmd, shell=True, executable='/bin/bash')
+    return out
+
+
 def runPicard(row):
     case, bam, run_dir = row
     cmd= "docker run --rm "
@@ -127,6 +143,12 @@ def parseArcticQC(run_dir, worklist):
     return df
 
 
+def parseCovert(covcsv):
+    df = pd.read_csv(covcsv)
+    df['case']=df['query'].str.split("_").str[0].str.split("-").str[:-1].str.join('-')
+    return df
+
+
 def multithread(mymethod, poolsize, maplist):
     pool = Pool(poolsize)
     pool.map(mymethod, maplist)
@@ -134,11 +156,12 @@ def multithread(mymethod, poolsize, maplist):
     pool.join()
 
 
-def makeReport(artic, picard, pang, nextc, outdir, worklist):
+def makeReport(artic, picard, pang, nextc, covert, outdir, worklist):
     outfile=os.path.join(outdir, "{}_pic_pang_nextc.qc.csv".format(worklist))
     report = pd.merge(left=artic, right=picard, left_on='case', right_on='case')
     report = pd.merge(left=report, right=pang, left_on='case', right_on='case')
     report = pd.merge(left=report, right=nextc, left_on='case', right_on='case')
+    report = pd.merge(left=report, right=covert, left_on='case', right_on='case')
     print("Report saved here:\n\t - {}".format(outfile))
     report.to_csv(outfile)
 
@@ -158,13 +181,15 @@ if __name__ == "__main__":
     #runPangolinPOP(args.arctic[0], args.worklist[0]) # can't run 
     famap = getFaMap(args.arctic[0])
     multithread(runPicard, 48, bammap)
-    multithread(runNextClade, 48, famap) # having issues with processes hanging
+    #multithread(runNextClade, 48, famap) # having issues with processes hanging
     for fa in famap:
         runNextClade(fa)
+    covert_csv = runCovert(run_dir, worklist)
+    covert = parseCovert(covert_csv)
     picard = parsePicard(bammap)
     nextc = parseNextCladeQC(famap)
     arctic = parseArcticQC(args.arctic[0], args.worklist[0])
     pang = parsePangolin(args.arctic[0], args.worklist[0])
 
-    makeReport(arctic, picard, pang, nextc, args.arctic[0], args.worklist[0])
+    makeReport(arctic, picard, pang, nextc, covert, args.arctic[0], args.worklist[0])
 
