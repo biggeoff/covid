@@ -16,17 +16,17 @@ def load():
       return all
 
 
-def undeterminedToZero(all):
-      all.loc[all['Beta-CoV-E Gene']=='Undetermined','Beta-CoV-E Gene'] = 0
-      all.loc[all['SARS-CoV-2 S Gene']=='Undetermined','SARS-CoV-2 S Gene'] = 0
+def undeterminedTo42(all):
+      all.loc[all['Beta-CoV-E Gene']=='Undetermined','Beta-CoV-E Gene'] = 42
+      all.loc[all['SARS-CoV-2 S Gene']=='Undetermined','SARS-CoV-2 S Gene'] = 42
       all['Beta-CoV-E Gene'] = pd.to_numeric(all['Beta-CoV-E Gene'])
       all['SARS-CoV-2 S Gene'] = pd.to_numeric(all['SARS-CoV-2 S Gene'])
       return all
 
 
 def scatterPlotLinReg(data, x_col, y_col, plot_name):
-      X = data.loc[data[y_col] > 0, x_col].values.reshape(-1, 1)  # values converts it into a numpy array
-      Y = data.loc[data[y_col] > 0, y_col].values.reshape(-1, 1)  # -1 means that calculate the dimension of rows, but have 1 column
+      X = data.loc[data[y_col] < 42, x_col].values.reshape(-1, 1)  # values converts it into a numpy array
+      Y = data.loc[data[y_col] < 42, y_col].values.reshape(-1, 1)  # -1 means that calculate the dimension of rows, but have 1 column
       linear_regressor = LinearRegression()  # create object for the class
       linear_regressor.fit(X, Y)  # perform linear regression
       Y_pred = linear_regressor.predict(X)  # make predictions
