@@ -146,3 +146,31 @@ aa:S:K417T
 ```
 
 integrate to `covid_extras.py`
+
+
+
+# Install NAAAAVI 
+
+https://github.com/SamStudio8/naaaavi/
+
+Create a set of IDs for our PHESW code - superceeding BRIS 
+```
+geoffw@nbsvr484:sandpit$ git clone https://github.com/SamStudio8/naaaavi
+geoffw@nbsvr484:sandpit$ cd naaaavi
+geoffw@nbsvr484:sandpit$ pip3 install naaaavi
+geoffw@nbsvr484:sandpit$ naaaavi generate --alphabet zbase32 --checksum luhn_mod_n --size 5 --rejectors max_repeats:2 min_unique:3 ismp_flips: better_profanity: not_exclusive:0123456789aAbBcCdDeEfF --prefix 'PHESW-' --upper -n 250
+```
+
+OK that's working nicely... let's bang out 250
+
+```
+naaaavi generate --alphabet zbase32 --checksum luhn_mod_n --size 6 --rejectors max_repeats:2 min_unique:3 ismp_flips: better_profanity: not_exclusive:0123456789aAbBcCdDeEfF --prefix 'PHESW-' --upper -n 250 > PHESW_first_250_codes.tsv
+```
+
+When we need to create more simply use the `--start-code` swithc with the final code from the previous output :
+
+```
+naaaavi generate --alphabet zbase32 --checksum luhn_mod_n --size 6 --rejectors max_repeats:2 min_unique:3 ismp_flips: better_profanity: not_exclusive:0123456789aAbBcCdDeEfF --prefix 'PHESW-' --upper -n 251 --start-code PHESW-YYBYKC > PHESW_second_250_codes.tsv
+```
+
+Make sure to delete the first row! (as it will be a duplicate of the final row of the last batch)
