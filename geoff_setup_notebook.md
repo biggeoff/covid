@@ -113,6 +113,36 @@ nextstrain/nextclade nextclade \
 -o '/out/4-20V80022587_nextclade.json'
 ```
 
-# Something for the key spike protein mutations?
+# COV-ERT/type_variants for key mutation reporting
 
-what tools?
+https://github.com/cov-ert/type_variants
+* COV-ERT type_variants used by CLIMB
+    * get running locally to get results without having to wait
+
+
+clone git repo and test:
+```
+geoffw@nbsvr484:sandpit$ git clone https://github.com/cov-ert/type_variants.git
+geoffw@nbsvr484:sandpit$ cd type_variants/
+geoffw@nbsvr484:type_variants$ python3 type_variants.py --fasta-in query.fasta --variants-config artic_config.csv --reference MN908947.fa --variants-out out.withgenotypes.csv --append-genotypes
+```
+Created a config file with the variatns output by the arctic pipeline as well as 2 further loci:
+
+```
+# Arctic
+aa:S:D614G
+aa:S:N439K
+aa:orf1ab:P4715L
+aa:S:Y453F
+aa:S:E484K
+aa:S:N501Y
+aa:orf1ab:T1001I
+aa:S:P681H
+aa:orf8:Q27*
+del:21765:6
+# Local extras
+aa:S:S494P
+aa:S:K417T
+```
+
+integrate to `covid_extras.py`
