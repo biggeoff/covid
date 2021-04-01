@@ -27,6 +27,7 @@ def loadMeta(outdir):
     previous_file = allmetas[-2]
     new = pd.read_csv(new_file)
     previous = pd.read_csv(previous_file)
+    print("\n\n\tPROCESSING {}\n\n".format(new_file))
     return new_file, new, previous
 
 

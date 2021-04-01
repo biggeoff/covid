@@ -169,8 +169,10 @@ naaaavi generate --alphabet zbase32 --checksum luhn_mod_n --size 6 --rejectors m
 
 When we need to create more simply use the `--start-code` swithc with the final code from the previous output :
 
+### 01/04/2021
+second batch
 ```
-naaaavi generate --alphabet zbase32 --checksum luhn_mod_n --size 6 --rejectors max_repeats:2 min_unique:3 ismp_flips: better_profanity: not_exclusive:0123456789aAbBcCdDeEfF --prefix 'PHESW-' --upper -n 251 --start-code PHESW-YYBYKC > PHESW_second_250_codes.tsv
+naaaavi generate --alphabet zbase32 --checksum luhn_mod_n --size 6 --rejectors max_repeats:2 min_unique:3 ismp_flips: better_profanity: not_exclusive:0123456789aAbBcCdDeEfF --prefix 'PHESW-' --upper -n 501 --start-code PHESW-YYBYKC > PHESW_second_500_codes.tsv
 ```
+Deleted the first row! (as it is a duplicate of the final row of the last batch)
 
-Make sure to delete the first row! (as it will be a duplicate of the final row of the last batch)
