@@ -73,19 +73,19 @@ def runNextClade(row):
     subprocess.run(cmd, shell=True)
 
 
-def runCovert(run_dir, worklist)
-    config='/home/geoffs/sandpit/type_variants/arctic_config.csv'
-    ref='/home/geoffs/sandpit/type_variants/MN908947.fa'
+def runCovert(run_dir, worklist):
+    config='/home/geoffw/sandpit/type_variants/arctic_config.csv'
+    ref='/home/geoffw/sandpit/type_variants/MN908947.fa'
     out=os.path.join(run_dir, worklist+'_covert.csv')
-    fa=os.path.join(run_dir, "ncovIllumina_sequenceAnalysis_makeConsensus", worklist+'_all.fa')
-    cmd['python3', 'type_variants.py', '--append-genotypes',
+    fa=os.path.join(run_dir, "ncovIllumina_sequenceAnalysis_makeConsensus", worklist+'.fa')
+    cmd = ['python3', 'type_variants.py', '--append-genotypes',
         '--fasta-in', fa,
         '--variants-config', config,
         '--reference', ref,
         '--variants-out', out
     ]
-    print("processing {}".format(case))
-    subprocess.run(cmd, shell=True, executable='/bin/bash')
+    print("Running Covert over: {}".format(worklist+'.fa'))
+    subprocess.run(cmd, shell=True)
     return out
 
 
@@ -157,13 +157,20 @@ def multithread(mymethod, poolsize, maplist):
 
 
 def makeReport(artic, picard, pang, nextc, covert, outdir, worklist):
-    outfile=os.path.join(outdir, "{}_pic_pang_nextc.qc.csv".format(worklist))
+    outfile=os.path.join(outdir, "{}_pic_pang_nextc_covert.qc.csv".format(worklist))
     report = pd.merge(left=artic, right=picard, left_on='case', right_on='case')
     report = pd.merge(left=report, right=pang, left_on='case', right_on='case')
     report = pd.merge(left=report, right=nextc, left_on='case', right_on='case')
     report = pd.merge(left=report, right=covert, left_on='case', right_on='case')
     print("Report saved here:\n\t - {}".format(outfile))
     report.to_csv(outfile)
+    return report
+
+
+def makeTidyreport(df, outdir, worklist):
+    #TODO
+    outfile=os.path.join(outdir, "{}_report.csv".format(worklist))
+    print("Report saved here:\n\t - {}".format(outfile))
 
 
 if __name__ == "__main__":
@@ -178,18 +185,19 @@ if __name__ == "__main__":
     #parser.add_argument("-o", "--output", nargs=1, type=str, help="output csv filename including full path", required=True)
     args = parser.parse_args()
     bammap = getBamMap(args.arctic[0])
-    #runPangolinPOP(args.arctic[0], args.worklist[0]) # can't run 
-    famap = getFaMap(args.arctic[0])
-    multithread(runPicard, 48, bammap)
-    #multithread(runNextClade, 48, famap) # having issues with processes hanging
-    for fa in famap:
-        runNextClade(fa)
-    covert_csv = runCovert(run_dir, worklist)
+    ##runPangolinPOP(args.arctic[0], args.worklist[0]) # can't run 
+    #famap = getFaMap(args.arctic[0])
+    #multithread(runPicard, 48, bammap)
+    ##multithread(runNextClade, 48, famap) # having issues with processes hanging
+    #for fa in famap:
+    #    runNextClade(fa)
+    covert_csv = runCovert(args.arctic[0], args.worklist[0])
     covert = parseCovert(covert_csv)
     picard = parsePicard(bammap)
     nextc = parseNextCladeQC(famap)
     arctic = parseArcticQC(args.arctic[0], args.worklist[0])
     pang = parsePangolin(args.arctic[0], args.worklist[0])
 
-    makeReport(arctic, picard, pang, nextc, covert, args.arctic[0], args.worklist[0])
+    data = makeReport(arctic, picard, pang, nextc, covert, args.arctic[0], args.worklist[0])
+    makeTidyReport(data, args.arctic[0], args.worklist[0])
 
