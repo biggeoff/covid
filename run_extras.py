@@ -161,7 +161,7 @@ def makeReport(artic, picard, pang, nextc, covert, outdir, worklist):
     report = pd.merge(left=artic, right=picard, left_on='case', right_on='case')
     report = pd.merge(left=report, right=pang, left_on='case', right_on='case')
     report = pd.merge(left=report, right=nextc, left_on='case', right_on='case')
-    report = pd.merge(left=report, right=covert, left_on='case', right_on='case')
+    #report = pd.merge(left=report, right=covert, left_on='case', right_on='case')
     print("Report saved here:\n\t - {}".format(outfile))
     report.to_csv(outfile)
     return report
@@ -185,19 +185,19 @@ if __name__ == "__main__":
     #parser.add_argument("-o", "--output", nargs=1, type=str, help="output csv filename including full path", required=True)
     args = parser.parse_args()
     bammap = getBamMap(args.arctic[0])
-    ##runPangolinPOP(args.arctic[0], args.worklist[0]) # can't run 
-    #famap = getFaMap(args.arctic[0])
-    #multithread(runPicard, 48, bammap)
-    ##multithread(runNextClade, 48, famap) # having issues with processes hanging
-    #for fa in famap:
-    #    runNextClade(fa)
-    covert_csv = runCovert(args.arctic[0], args.worklist[0])
-    covert = parseCovert(covert_csv)
+    #runPangolinPOP(args.arctic[0], args.worklist[0]) # CANT RUN CONDA FROM INSIDE SCRIPT 
+    famap = getFaMap(args.arctic[0])
+    multithread(runPicard, 48, bammap)
+    for fa in famap:  # NextClade is already multithreaded
+        runNextClade(fa)
+    #covert_csv = runCovert(args.arctic[0], args.worklist[0])
+    #covert = parseCovert(covert_csv)
+    covert = ""
     picard = parsePicard(bammap)
     nextc = parseNextCladeQC(famap)
     arctic = parseArcticQC(args.arctic[0], args.worklist[0])
     pang = parsePangolin(args.arctic[0], args.worklist[0])
 
     data = makeReport(arctic, picard, pang, nextc, covert, args.arctic[0], args.worklist[0])
-    makeTidyReport(data, args.arctic[0], args.worklist[0])
+    #makeTidyReport(data, args.arctic[0], args.worklist[0])
 
