@@ -7,10 +7,10 @@ def loadLineage(lineagecsv):
     """ Read in lineage CSV output from Pangolin 
     Return pandas df with 3 useful columns renamed """
     df = pd.read_csv(lineagecsv)
-    df['Sample Name'] = df['taxon'].str.split('_').str[1].str.split("-").str[0]
-    df['Well'] = df['taxon'].str.split('_').str[1].str.split("-").str[1]
+    df['Sample Name'] = df['taxon'].str.split('_').str[1].str.split("-").str[:-1].str.join('-')
+    df['Well'] = df['taxon'].str.split('_').str[1].str.split("-").str[2]
     df = df[['Well', 'Sample Name', 'lineage']]
-    df.loc[df['lineage']=='None', 'lineage'] = "No lineage assigned"
+    df.loc[df['lineage']=='None', 'lineage'] = "" # leave blank so can be assigned in WinPath later
     df.columns=['Well', 'Sample Name', u'C\u0442']
     return df
 
