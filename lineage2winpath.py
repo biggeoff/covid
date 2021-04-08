@@ -7,17 +7,30 @@ def loadLineage(lineagecsv):
     """ Read in lineage CSV output from Pangolin 
     Return pandas df with 3 useful columns renamed """
     df = pd.read_csv(lineagecsv)
-    df['Sample Name'] = df['taxon'].str.split('_').str[1].str.split("-").str[:-1].str.join('-')
+    df['COG_ID'] = df['taxon'].str.split('_').str[1].str.split("-").str[:-1].str.join('-')
     df['Well'] = df['taxon'].str.split('_').str[1].str.split("-").str[2]
-    df = df[['Well', 'Sample Name', 'lineage']]
+    df = df[['Well', 'COG_ID', 'lineage']]
     df.loc[df['lineage']=='None', 'lineage'] = "" # leave blank so can be assigned in WinPath later
-    df.columns=['Well', 'Sample Name', u'C\u0442']
+    df.columns=['Well', 'COG_ID', u'C\u0442']
     return df
 
 
-def parse2winpath(df):
-    """ add columns required for winpath PCR upload 
-    return df """
+def loadSS(ss):
+    df=pd.read_csv(ss, skiprows=19)
+    return df
+    
+
+def parse2winpath(df, ss):
+    """ 
+    refactor SampleSheet dataframe
+    merge with lineage report
+    add columns required for winpath PCR upload 
+    return df 
+    """
+    ss = ss.reindex(columns=["Sample_ID", "Column1"])
+    df = pd.merge(left=data, right=ss, left_on="COG_ID", right_on="Sample_ID")
+    df.columns=['Well', 'COG_ID', u'C\u0442', 'Sample_ID', 'Sample Name']
+    
     cols=['Well', 'Sample Name', 'Target Name', 'Task', 
         'Reporter', 'Quencher', u'C\u0442', u'C\u0442 Mean', u'C\u0442 SD', 
         'Quantity', 'Quantity Mean', 'Quantity SD', 
@@ -59,9 +72,11 @@ if __name__ == "__main__":
     Script to run coverage over all cases in alignment dir
     """
     parser = argparse.ArgumentParser()
+    parser.add_argument("-s", "--samplesheet", nargs=1, type=str, help="full path to samplesheet", required=True)
     parser.add_argument("-l", "--lineage", nargs=1, type=str, help="full path to artice pipeline output folder", required=True)
     parser.add_argument("-o", "--output", nargs=1, type=str, help="output csv filename including full path", required=True)
     args = parser.parse_args()
     data = loadLineage(args.lineage[0])
-    parsed = parse2winpath(data)
+    ss = loadSS(args.samplesheet[0])
+    parsed = parse2winpath(data, ss)
     emitCSV(parsed, args.output[0])
