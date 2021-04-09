@@ -176,3 +176,20 @@ naaaavi generate --alphabet zbase32 --checksum luhn_mod_n --size 6 --rejectors m
 ```
 Deleted the first row! (as it is a duplicate of the final row of the last batch)
 
+
+
+# Ocarina
+
+## install 
+pip3 install git+https://github.com/samstudio8/ocarina.git
+
+Created a new settings file:
+`~/.ocarina`:
+```
+{
+        "MAJORA_DOMAIN": "https://majora.covid19.climb.ac.uk/", 
+        "MAJORA_USER": "climb-covid19-woodwardg", 
+        "MAJORA_TOKEN": "276d7c7c-4767-48c1-aa8a-d4090eea851a"
+}
+```
+

@@ -551,3 +551,10 @@ incorporated sklearn for linear regression and better plots.
 python3 CT_value_investigation.py
 ```
 
+# holy shit we're LIVE!!!
+upload first LIVE run to CLIMB!!!!
+```
+scp -r ncov2019-arctic-nf/qc_pass_climb_upload/20210324 climb-covid19-woodwardg@bham.covid19.climb.ac.uk:upload/
+
+```
+
