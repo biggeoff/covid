@@ -91,7 +91,8 @@ def getDeletedRows(new, prev):
     unique = compare_df.getUniqueRecords(new, prev)
     deleted=unique[unique.Dataframe=="right_only"]
     deleted=deleted.drop('Dataframe', 1)
-    deleted.loc[:,'STATUS'] = "DELETED"
+    if deleted.shape[0] > 0:
+        deleted.loc[:,'STATUS'] = "DELETED"
     return deleted
 
 
