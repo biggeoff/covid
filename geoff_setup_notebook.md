@@ -193,3 +193,12 @@ Created a new settings file:
 }
 ```
 
+Will need to generate a new token everytime
+I've created a docker file - so that any user can run this.
+however they will need to generate a new Majora token every time, and rebuild the docker image.
+So kind of pointless...
+depending on way forward it makes sense to just have a script output a CSV file for
+manual upload through the web interface.
+
+Looks like it is possible to set up `OAuth` for ocarina.
+https://docs.covid19.climb.ac.uk/oauth-app
