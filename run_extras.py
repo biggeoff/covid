@@ -23,6 +23,15 @@ def getFaMap(run_dir):
     return fas
 
 
+def getVCFMap(run_dir):
+    vcfs=[]
+    files = os.listdir(os.path.join(run_dir, 'ncovIllumina_sequenceAnalysis_callVariants'))
+    for vcf in [f for f in files if f.endswith(".tsv")]:
+        case = "-".join(vcf.split("-")[:-1])
+        vcfs.append((case, vcf, run_dir))
+    return vcfs
+
+
 def runPangolin(run_dir, worklist):
     cmd = 'conda activate pangolin && '
     cmd += 'cat ncovIllumina_sequenceAnalysis_makeConsensus/*fa > '+worklist+'_all.fa && '
@@ -59,6 +68,20 @@ def runPangolinPOP(run_dir, worklist):
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=preexec_fn)
     stdout, stderr = pngo.communicate()
     print(stderr)
+
+
+def parseVCFsForLocus(vcfmap, locus, locus_name, allele):
+    matches=pd.DataFrame()
+    for case, vcf, path in vcfmap:
+        data = pd.read_csv(os.path.join(path, 'ncovIllumina_sequenceAnalysis_callVariants', vcf), sep="\t", header=0)
+        if data[(data.POS == locus) & (data.ALT == allele)].shape[0] > 0:
+            hits = data[(data.POS == locus) & (data.ALT == allele)]
+            hits['case'] = case
+            matches = matches.append(hits)
+    if matches.shape[0] > 0:
+        matches = matches.reindex(columns=['case','ALT_FREQ', 'PASS'])
+        matches = matches.rename(columns={'ALT_FREQ':locus_name, 'PASS':locus_name+'_PASS'})
+    return matches
 
 
 def runNextClade(row):
@@ -156,21 +179,31 @@ def multithread(mymethod, poolsize, maplist):
     pool.join()
 
 
-def makeReport(artic, picard, pang, nextc, covert, outdir, worklist):
-    outfile=os.path.join(outdir, "{}_pic_pang_nextc_covert.qc.csv".format(worklist))
-    report = pd.merge(left=artic, right=picard, left_on='case', right_on='case')
+def makeReport(ss, artic, picard, pang, nextc, E484K, outdir, worklist):
+    outfile=os.path.join(outdir, "{}_full_report.csv".format(worklist))
+    report = pd.merge(left=ss, right=arctic, left_on='Sample_ID', right_on='case')
+    report = pd.merge(left=report, right=picard, left_on='case', right_on='case')
     report = pd.merge(left=report, right=pang, left_on='case', right_on='case')
     report = pd.merge(left=report, right=nextc, left_on='case', right_on='case')
-    #report = pd.merge(left=report, right=covert, left_on='case', right_on='case')
+    report = pd.merge(left=report, right=E484K, left_on='case', right_on='case', how='left')
     print("Report saved here:\n\t - {}".format(outfile))
     report.to_csv(outfile)
     return report
 
 
-def makeTidyreport(df, outdir, worklist):
-    #TODO
-    outfile=os.path.join(outdir, "{}_report.csv".format(worklist))
+def makeLocalReport(df, outdir, worklist):
+    outfile=os.path.join(outdir, "{}_lineage_E484K.csv".format(worklist))
+    report = df.reindex(columns=['Column1','Sample_ID', 'lineage', 'E484K', 'status', 'note',  'E484K_PASS'])
+    header=['Lab Number','COG-UKID','Lineage', 'E484K', 'Pango QC', 'Pango note', 'E484K_QC']
+    report.columns=header
+    report.to_csv(outfile)
     print("Report saved here:\n\t - {}".format(outfile))
+
+
+def loadSS(arctic):
+    ss = '/'.join(arctic.split('/')[:-1])+'/SampleSheet.csv'
+    df=pd.read_csv(ss, skiprows=19)
+    return df
 
 
 if __name__ == "__main__":
@@ -184,12 +217,14 @@ if __name__ == "__main__":
     parser.add_argument("-w", "--worklist", nargs=1, type=str, help="Name of the run/worklist", required=True)
     #parser.add_argument("-o", "--output", nargs=1, type=str, help="output csv filename including full path", required=True)
     args = parser.parse_args()
+    ss = loadSS(args.arctic[0])
     bammap = getBamMap(args.arctic[0])
     #runPangolinPOP(args.arctic[0], args.worklist[0]) # CANT RUN CONDA FROM INSIDE SCRIPT 
     famap = getFaMap(args.arctic[0])
-    multithread(runPicard, 48, bammap)
-    for fa in famap:  # NextClade is already multithreaded
-        runNextClade(fa)
+    vcfmap = getVCFMap(args.arctic[0])
+    #multithread(runPicard, 48, bammap)
+    #for fa in famap:  # NextClade is already multithreaded
+    #    runNextClade(fa)
     #covert_csv = runCovert(args.arctic[0], args.worklist[0])
     #covert = parseCovert(covert_csv)
     covert = ""
@@ -197,7 +232,8 @@ if __name__ == "__main__":
     nextc = parseNextCladeQC(famap)
     arctic = parseArcticQC(args.arctic[0], args.worklist[0])
     pang = parsePangolin(args.arctic[0], args.worklist[0])
+    E484K = parseVCFsForLocus(vcfmap, 23012, "E484K", 'A')
 
-    data = makeReport(arctic, picard, pang, nextc, covert, args.arctic[0], args.worklist[0])
-    #makeTidyReport(data, args.arctic[0], args.worklist[0])
+    data = makeReport(ss, arctic, picard, pang, nextc, E484K, args.arctic[0], args.worklist[0])
+    makeLocalReport(data, args.arctic[0], args.worklist[0])
 
