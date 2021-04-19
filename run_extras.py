@@ -43,6 +43,22 @@ def runPangolin(run_dir, worklist):
     list_dir.wait()
 
 
+def createRunFasta(run_dir, worklist):
+    cmd = 'cat '+run_dir+'/ncovIllumina_sequenceAnalysis_makeConsensus/*fa'
+    cmd += ' > 'run_dir+'/'+worklist+'.fa'
+    print (cmd)
+    subprocess.run(cmd, shell=True, executable='/bin/bash')
+
+
+def runPangolinDocker(run_dir, worklist):
+    cmd = ['docker', 'run', '-v', run_dir+'/:/test/', '--rm',
+        'staphb/pangolin', 'pangolin', '/test/'+worklist+'.fa',
+        '--outfile', '/test/'+worklist+'_lineage_report.csv']
+    cmd_str = ' '.join(cmd) 
+    print (cmd_str)
+    subprocess.run(cmd_str, shell=True, executable='/bin/bash')
+
+
 def preexec_fn():
     os.setgid(1005)
     os.setuid(1005)
@@ -219,12 +235,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
     ss = loadSS(args.arctic[0])
     bammap = getBamMap(args.arctic[0])
-    #runPangolinPOP(args.arctic[0], args.worklist[0]) # CANT RUN CONDA FROM INSIDE SCRIPT 
+    createRunFasta(args.arctic[0], args.worklist[0])
+    runPangolinDocker(args.arctic[0], args.worklist[0]) 
     famap = getFaMap(args.arctic[0])
     vcfmap = getVCFMap(args.arctic[0])
-    #multithread(runPicard, 48, bammap)
-    #for fa in famap:  # NextClade is already multithreaded
-    #    runNextClade(fa)
+    multithread(runPicard, 48, bammap)
+    for fa in famap:  # NextClade is already multithreaded
+        runNextClade(fa)
     #covert_csv = runCovert(args.arctic[0], args.worklist[0])
     #covert = parseCovert(covert_csv)
     covert = ""
