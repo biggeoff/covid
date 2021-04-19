@@ -45,7 +45,7 @@ def runPangolin(run_dir, worklist):
 
 def createRunFasta(run_dir, worklist):
     cmd = 'cat '+run_dir+'/ncovIllumina_sequenceAnalysis_makeConsensus/*fa'
-    cmd += ' > 'run_dir+'/'+worklist+'.fa'
+    cmd += ' > '+run_dir+'/'+worklist+'.fa'
     print (cmd)
     subprocess.run(cmd, shell=True, executable='/bin/bash')
 
