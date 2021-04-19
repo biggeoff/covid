@@ -16,7 +16,7 @@ def removeAfterDelim(subdirs, delim='_', count=1):
             print('renaming: {} -> {}'.format(sd, new))
 
 
-if__name__ == "__main__":
+if __name__ == "__main__":
     """
     removes all the extraneous info after the COG-UK ID in the sub dir names ready for CLIMB upload
     for example: 
@@ -29,9 +29,9 @@ if__name__ == "__main__":
     parser.add_argument("-w", "--worklist", nargs=1, type=str, help="Name of the run/worklist", required=True)
     args = parser.parse_args()
 
-    subdirs = getCLIMBsubdirs(arctic_dir, worklist)
+    subdirs = getCLIMBsubdirs(args.arctic[0], args.worklist[0])
     removeAfterDelim(subdirs, delim='_', count=2)
 
-    subdirs = getCLIMBsubdirs(arctic_dir, worklist)
+    subdirs = getCLIMBsubdirs(args.arctic[0], args.worklist[0])
     removeAfterDelim(subdirs, delim='-', count=1)
 
