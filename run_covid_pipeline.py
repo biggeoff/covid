@@ -68,13 +68,12 @@ def createRunFasta(run_dir, worklist):
 
 
 def runPangolinDocker(run_dir, worklist):
-    cmd = ['docker', 'run', '-v', run_dir+'/:/test/', '--rm',
-        'staphb/pangolin:latest', 'pangolin', '--update', '&&', 
-        'pangolin', '/test/'+worklist+'.fa',
-        '--outfile', '/test/'+worklist+'_lineage_report.csv']
-    cmd_str = ' '.join(cmd) 
-    print (cmd_str)
-    subprocess.run(cmd_str, shell=True, executable='/bin/bash')
+    cmd = 'docker run -v '+run_dir+'/:/test/ --rm'
+    cmd += 'staphb/pangolin:latest bash -c "' 
+    cmd += 'pangolin --update && pangolin /test/'+worklist+'.fa'
+    cmd += '--outfile /test/'+worklist+'_lineage_report.csv"'
+    print (cmd)
+    subprocess.run(cmd, shell=True, executable='/bin/bash')
 
 
 def prepareFastas(run_dir, worklist):
