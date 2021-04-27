@@ -89,11 +89,21 @@ cat *.fa > all_tailed_run1.fa
 pangolin all_tailed_run1.fa
 ```
 all working perfectly.
-
-
-```
+```bash
 conda deactivate
 ```
+
+## Pangolin in Docker
+
+Containerisation allows automation of Pangoling calling from within the COVID wrapper Python script:
+
+```bash
+docker pull staphb/pangolin:2.3.8-pangolearn-2021-04-01
+docker run -v `pwd`/pango_docker_test/:/test/ --rm staphb/pangolin pangolin /test/20210324.fa --outfile /test/docker_lineage_report.csv 
+```
+
+
+
 
 # NextClade
 
@@ -202,3 +212,22 @@ manual upload through the web interface.
 
 Looks like it is possible to set up `OAuth` for ocarina.
 https://docs.covid19.climb.ac.uk/oauth-app
+
+# Update Pangolin
+
+```bash
+docker run -it staphb/pangolin:latest bash
+pangolin --update
+exit
+docker commit 1009f832bb55 staphb/pangolin:latest
+```
+
+run to make sure it works:
+
+```bash
+docker run --rm -v /mnt/NGS_DATA_at_Bristol/COVID/20210419/:/test/ staphb/pangolin:latest pangolin /test/20210419.fa --outfile /test/20210419_lineage_report_new.csv
+```
+
+perfect resolved the issue with non-conformance to webtool
+
+Added an update command to the pipeline to that it always updates beofre classifying
