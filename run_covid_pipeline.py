@@ -29,6 +29,15 @@ def getFaMap(run_dir):
     return fas
 
 
+def getVCFMap(run_dir):
+    vcfs=[]
+    files = os.listdir(os.path.join(run_dir, 'ncovIllumina_sequenceAnalysis_callVariants'))
+    for vcf in [f for f in files if f.endswith(".tsv")]:
+        case = "-".join(vcf.split("-")[:-1])
+        vcfs.append((case, vcf, run_dir))
+    return vcfs
+
+
 def runArctic(run_dir, worklist):
     """ run the NF pipeline """
     arctic_out = os.path.join(run_dir, 'ncov2019-arctic-nf')
@@ -52,7 +61,7 @@ def runArctic(run_dir, worklist):
 
 
 def createRunFasta(run_dir, worklist):
-    cmd = 'cat '+ os.path.join(run_dir, 'ncovIllumina_sequenceAnalysis_makeConsensus/*fa')
+    cmd = 'cat '+ os.path.join(run_dir, 'ncovIllumina_sequenceAnalysis_makeConsensus', '*fa')
     cmd += ' > '+  os.path.join(run_dir, worklist+'.fa')
     print (cmd)
     subprocess.run(cmd, shell=True, executable='/bin/bash')
@@ -60,7 +69,8 @@ def createRunFasta(run_dir, worklist):
 
 def runPangolinDocker(run_dir, worklist):
     cmd = ['docker', 'run', '-v', run_dir+'/:/test/', '--rm',
-        'staphb/pangolin', 'pangolin', '/test/'+worklist+'.fa',
+        'staphb/pangolin:latest', 'pangolin', '--update', '&&', 
+        'pangolin', '/test/'+worklist+'.fa',
         '--outfile', '/test/'+worklist+'_lineage_report.csv']
     cmd_str = ' '.join(cmd) 
     print (cmd_str)
@@ -129,8 +139,10 @@ def parseNextCladeQC(fa_map):
 
 
 def parsePangolin(run_dir, worklist):
+    print(os.path.join(run_dir, worklist+"_lineage_report.csv"))
     df=pd.read_csv(os.path.join(run_dir, worklist+"_lineage_report.csv"))
     df['case']=df['taxon'].str.split("_").str[1].str.split("-").str[:-1].str.join('-')
+    print(df)
     return df
 
 
@@ -196,11 +208,13 @@ if __name__ == "__main__":
     ss = loadSS(args.run_dir[0])
     # Run Pipeline
     arctic_dir = runArctic(args.run_dir[0], args.worklist[0])
+    arctic_dir=args.run_dir[0]+"/ncov2019-arctic-nf/"
     # Run extra annotation and QC
     createRunFasta(arctic_dir, args.worklist[0])
     runPangolinDocker(arctic_dir, args.worklist[0])
     bammap = getBamMap(arctic_dir)
     famap = getFaMap(arctic_dir)
+    vcfmap = getVCFMap(arctic_dir)
     multithread(runPicard, 48, bammap)
     for fa in famap:  # NextClade is already multithreaded
         runNextClade(fa)
