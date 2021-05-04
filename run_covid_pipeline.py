@@ -3,6 +3,18 @@ import subprocess
 from multiprocessing.dummy import Pool
 import argparse
 import pandas as pd
+import settings
+
+
+def RunBCL2fastq(run_dir):
+	"""Create cmd string and execute BCL2fastq2 in the shell"""
+	mnts="-v {}:/run".format(run_dir) 
+	out_dir="/run/Data/Intensities/BaseCalls/"
+
+	cmd="docker run "+mnts+" "+settings.BCL2FASTQ2_CONTAINER+" "+settings.BCL2FASTQ_EXE
+	cmd+=" -R /run -o "+out_dir+" --barcode-mismatches 0 --ignore-missing-bcls "
+	cmd+="--ignore-missing-filter --ignore-missing-positions --sample-sheet /run/SampleSheet.csv"
+	subprocess.call([ cmd ], shell=True)
 
 
 def loadSS(rundir):
@@ -40,15 +52,16 @@ def getVCFMap(run_dir):
 
 def runArctic(run_dir, worklist):
     """ run the NF pipeline """
+    ref = settings.ARCTIC_RESOURCE + settings.ARCTIC_REF
     arctic_out = os.path.join(run_dir, 'ncov2019-arctic-nf')
     cmd = "NXF_VER=20.10.0 NXF_WORK=/tmp "
-    cmd += "nextflow run /home/geoffw/sandpit/ncov2019-artic-nf "
+    cmd += "nextflow run "+settings.ARCTIC_PATH+" "
     cmd += "-profile conda "
-    cmd += "--cache /home/geoffw/miniconda3/envs/artic-ncov2019-illumina/ "
+    cmd += "--cache "+settings.ARCTIC_CACHE+" "
     cmd += "--illumina "
     cmd += "--prefix "+worklist+" "
-    cmd += "--ivarBed /fastdata/ncov2019-arctic/nCoV-2019/V3/nCoV-2019.bed "
-    cmd += "--alignerRefPrefix /fastdata/ncov2019-arctic/nCoV-2019/V3/nCoV-2019.reference.fasta "
+    cmd += "--ivarBed "+settings.ARCTIC_BED+" "
+    cmd += "--alignerRefPrefix "+ref+" "
     cmd += "--directory " + run_dir + " "
     cmd += "--outdir " + arctic_out
     print ("\n Runninng Artic v4 Pipeline....\n")
@@ -69,7 +82,7 @@ def createRunFasta(run_dir, worklist):
 
 def runPangolinDocker(run_dir, worklist):
     cmd = 'docker run -v '+run_dir+'/:/test/ --rm'
-    cmd += 'staphb/pangolin:latest bash -c "' 
+    cmd += settings.PANGOLIN_DOCKER+' bash -c "' 
     cmd += 'pangolin --update && pangolin /test/'+worklist+'.fa'
     cmd += '--outfile /test/'+worklist+'_lineage_report.csv"'
     print (cmd)
@@ -88,7 +101,7 @@ def runNextClade(row):
     cmd = 'docker run --rm '
     cmd += '-v '+run_dir+'/ncovIllumina_sequenceAnalysis_makeConsensus/:/in/ '
     cmd += '-v '+run_dir+'/nextclade/:/out/ '
-    cmd += 'nextstrain/nextclade nextclade '
+    cmd += settings.NEXTCLADE_DOCKER+' nextclade '
     cmd += '-i /in/'+fa+' '
     cmd += '-o /out/'+case+'_nextclade.json '
     print("processing {}".format(case))
@@ -100,11 +113,11 @@ def runPicard(row):
     cmd= "docker run --rm "
     cmd += "-v "+run_dir+"/ncovIllumina_sequenceAnalysis_readMapping/:/in/ "
     cmd += "-v "+run_dir+"/picard/:/out/ "
-    cmd += "-v /fastdata/ncov2019-arctic/SARS-CoV-2/V3:/ref/ " 
-    cmd += "geoffw/picard1.67 "
-    cmd += "java -jar /picard-tools-1.67/CollectInsertSizeMetrics.jar "
+    cmd += "-v "+settings.ARCTIC_RESOURCE+":/ref/ " 
+    cmd += settings.PICARD_DOCKER+" "
+    cmd += "java -jar "+settings.PICARD_JAR+" "
     cmd += "I=/in/"+bam+" "
-    cmd += "R=/ref/nCoV-2019.reference.fasta "
+    cmd += "R=/ref/"+settings.ARCTIC_REF+" "
     cmd += "H=/out/"+case+".hist "
     cmd += "O=/out/"+case+".txt"
     print("processing {}".format(case))
@@ -204,13 +217,17 @@ if __name__ == "__main__":
     parser.add_argument("-r", "--run_dir", nargs=1, type=str, help="full path to Illumina run folder", required=True)
     parser.add_argument("-w", "--worklist", nargs=1, type=str, help="Name of the run/worklist", required=True)
     args = parser.parse_args()
-    ss = loadSS(args.run_dir[0])
+    run = args.run_dir[0]
+    wl = args.worklist[0]
+    arctic_dir = run+"/ncov2019-arctic-nf/"
+
+    ss = loadSS(run)
     # Run Pipeline
-    arctic_dir = runArctic(args.run_dir[0], args.worklist[0])
-    arctic_dir=args.run_dir[0]+"/ncov2019-arctic-nf/"
+    demux(run)
+    arctic_dir = runArctic(run, wl)
     # Run extra annotation and QC
-    createRunFasta(arctic_dir, args.worklist[0])
-    runPangolinDocker(arctic_dir, args.worklist[0])
+    createRunFasta(arctic_dir, wl)
+    runPangolinDocker(arctic_dir, wl)
     bammap = getBamMap(arctic_dir)
     famap = getFaMap(arctic_dir)
     vcfmap = getVCFMap(arctic_dir)
@@ -220,10 +237,10 @@ if __name__ == "__main__":
     # Parse in all datasets
     picard = parsePicard(bammap)
     nextc = parseNextCladeQC(famap)
-    arctic = parseArcticQC(arctic_dir, args.worklist[0])
-    pang = parsePangolin(arctic_dir, args.worklist[0])
+    arctic = parseArcticQC(arctic_dir, wl)
+    pang = parsePangolin(arctic_dir, wl)
     E484K = parseVCFsForLocus(vcfmap, 23012, "E484K", 'A')
     # output final reports
-    data = makeReport(ss, arctic, picard, pang, nextc, E484K, arctic_dir, args.worklist[0])
-    makeLocalReport(data, arctic_dir, args.worklist[0])
+    data = makeReport(ss, arctic, picard, pang, nextc, E484K, arctic_dir, wl)
+    makeLocalReport(data, arctic_dir, wl)
 
