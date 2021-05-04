@@ -518,11 +518,11 @@ NXF_VER=20.10.0 nextflow run /home/geoffw/sandpit/ncov2019-artic-nf \
 -profile conda \
 --cache /home/geoffw/miniconda3/envs/artic-ncov2019-illumina/ \
 --illumina \
---prefix "20210309" \
+--prefix "20210400" \
 --ivarBed /fastdata/ncov2019-arctic/nCoV-2019/V3/nCoV-2019.bed \
 --alignerRefPrefix /fastdata/ncov2019-arctic/nCoV-2019/V3/nCoV-2019.reference.fasta \
---directory /largedata/share/MiSeqOutput2/210319_M03605_0243_000000000-JJDPJ/ \
---outdir /largedata/share/MiSeqOutput2/210319_M03605_0243_000000000-JJDPJ/ncov2019-arctic-nf
+--directory /largedata/share/MiSeqOutput2/210409_M03605_0249_000000000-JLYP5/ \
+--outdir /largedata/share/MiSeqOutput2/210409_M03605_0249_000000000-JLYP5/ncov2019-arctic-nf
 ```
 
 pangolin:
@@ -558,3 +558,96 @@ scp -r ncov2019-arctic-nf/qc_pass_climb_upload/20210324 climb-covid19-woodwardg@
 
 ```
 
+
+second live run: they didn't copy the fqs over the arseholes!
+
+single command demux and pipeline
+```
+docker run -v /largedata/share/MiSeqOutput2/210409_M03605_0249_000000000-JLYP5/:/run/ \
+geoffw/centos_bcl2fastq2 \
+bcl2fastq -R /run -o /run/Data/Intensities/BaseCalls \
+--barcode-mismatches 0 --ignore-missing-bcls \
+--ignore-missing-filter --ignore-missing-positions \
+--sample-sheet /run/SampleSheet.csv && NXF_VER=20.10.0 NXF_WORK=/tmp nextflow \
+run /home/geoffw/sandpit/ncov2019-artic-nf \
+-profile conda \
+--cache /home/geoffw/miniconda3/envs/artic-ncov2019-illumina/ \
+--illumina \
+--prefix "20210400" \
+--ivarBed /fastdata/ncov2019-arctic/nCoV-2019/V3/nCoV-2019.bed \
+--alignerRefPrefix /fastdata/ncov2019-arctic/nCoV-2019/V3/nCoV-2019.reference.fasta \
+--directory /largedata/share/MiSeqOutput2/210409_M03605_0249_000000000-JLYP5/ \
+--outdir /largedata/share/MiSeqOutput2/210409_M03605_0249_000000000-JLYP5/ncov2019-arctic-nf
+```
+
+extras:
+
+```
+cat ncov2019-arctic-nf/ncovIllumina_sequenceAnalysis_makeConsensus/*fa > 20210406.fa
+conda activate pangolin
+pangolin 20210406.fa 
+cp 20210406.fa ncov2019-arctic-nf/.
+cp 20210406.fa ncov2019-arctic-nf/ncovIllumina_sequenceAnalysis_makeConsensus/.
+conda deactivate 
+
+python3 ~/sandpit/covid-extras/run_extras.py -a /largedata/share/MiSeqOutput2/210409_M03605_0249_000000000-JLYP5/ncov2019-arctic-nf/ -w 20210406 
+
+```
+
+# another live run
+
+Copy to 484 ready for pipeline
+```bash
+sudo rsync -azvP --include "*/" --include "*xml" --include "*csv" --include "*txt" --include "*bin" --include "*locs" --include "*fastq.gz" --exclude "*" /RUN_FOLDERS/MiSeqOutput/210416_M00132_0968_000000000-JLWJ3 /largedata/share/MiSeqOutput/
+```
+
+run the full pipeline
+
+```bash
+NXF_VER=20.10.0 NXF_WORK=/tmp nextflow \
+run /home/geoffw/sandpit/ncov2019-artic-nf \
+-profile conda \
+--cache /home/geoffw/miniconda3/envs/artic-ncov2019-illumina/ \
+--illumina \
+--prefix "20210412" \
+--ivarBed /fastdata/ncov2019-arctic/nCoV-2019/V3/nCoV-2019.bed \
+--alignerRefPrefix /fastdata/ncov2019-arctic/nCoV-2019/V3/nCoV-2019.reference.fasta \
+--directory /largedata/share/MiSeqOutput/210416_M00132_0968_000000000-JLWJ3/ \
+--outdir /largedata/share/MiSeqOutput/210416_M00132_0968_000000000-JLWJ3/ncov2019-arctic-nf
+```
+
+extras:
+
+```bash
+cat ncov2019-arctic-nf/ncovIllumina_sequenceAnalysis_makeConsensus/*fa > 20210412.fa
+conda activate pangolin
+pangolin 20210412.fa 
+conda deactivate 
+cp 20210412.fa ncov2019-arctic-nf/.
+cp 20210412.fa ncov2019-arctic-nf/ncovIllumina_sequenceAnalysis_makeConsensus/.
+
+python3 ~/sandpit/covid-extras/run_extras.py -a /largedata/share/MiSeqOutput/210416_M00132_0968_000000000-JLWJ3/ -w 20210412 
+```
+
+
+
+## Live run 3 with complete pipeline wrapper:
+
+```bash
+rsync -azvP --include "*/" --include "*xml" --include "*csv" --include "*txt" --include "*bin" --include "*locs" --include "*fastq.gz" --exclude "*" /RUN_FOLDERS/MiSeqOutput2/210422_M03605_0254_000000000-JLWLK /largedata/share/MiSeqOutput2/
+
+sudo chown geoffw:geoffw /largedata/share/MiSeqOutput2/210422_M03605_0254_000000000-JLWLK
+
+python3 ~/sandpit/covid-extras/run_covid_pipeline.py -r /largedata/share/MiSeqOutput2/210422_M03605_0254_000000000-JLWLK -w 20210419 
+
+python /home/geoffw/sandpit/covid-extras/lineage2winpath.py \
+-l ncov2019-arctic-nf/20210419_lineage_report.csv \
+-s SampleSheet.csv \
+-o ncov2019-arctic-nf/20210419_ABI_local.txt
+
+python3 ~/sandpit/covid-extras/rename_climb_dirs.py -a ${PWD}/ncov2019-arctic-nf/ -w 20210419 -r 210422_M03605_0254_000000000-JLWLK
+
+scp -r ncov2019-arctic-nf/qc_pass_climb_upload/210422_M03605_0254_000000000-JLWLK climb-covid19-woodwardg@bham.covid19.climb.ac.uk:upload/.
+
+python3 ~/sandpit/covid-extras/ocarina_API.py -a ${PWD}/ncov2019-arctic-nf -d 210422_M03605_0254_000000000-JLWLK -w 20210419
+```

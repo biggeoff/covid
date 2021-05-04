@@ -1,13 +1,16 @@
+#!/usr/bin/python3
+
 import os
 import subprocess
 from multiprocessing.dummy import Pool
 import argparse
 import pandas as pd
 import settings
+import winpath
 
 
 def RunBCL2fastq(run_dir):
-	"""Create cmd string and execute BCL2fastq2 in the shell"""
+	"""Create cmd string and execute BCL2fastq2 in Docker """
 	mnts="-v {}:/run".format(run_dir) 
 	out_dir="/run/Data/Intensities/BaseCalls/"
 
@@ -18,12 +21,14 @@ def RunBCL2fastq(run_dir):
 
 
 def loadSS(rundir):
+    """ read and return the samplesheet into a pandas dataframe"""
     ss = os.path.join(rundir, 'SampleSheet.csv')
     df=pd.read_csv(ss, skiprows=19)
     return df
 
 
 def getBamMap(run_dir):
+    """ return a map of BAMs for multiprocessing """
     bams=[]
     files = os.listdir(os.path.join(run_dir, 'ncovIllumina_sequenceAnalysis_readMapping'))
     for bam in [f for f in files if f.endswith(".bam")]:
@@ -33,6 +38,7 @@ def getBamMap(run_dir):
 
 
 def getFaMap(run_dir):
+    """ return a map of FASTAs for multiprocessing """
     fas=[]
     files = os.listdir(os.path.join(run_dir, 'ncovIllumina_sequenceAnalysis_makeConsensus'))
     for fa in [f for f in files if f.endswith(".fa")]:
@@ -42,6 +48,7 @@ def getFaMap(run_dir):
 
 
 def getVCFMap(run_dir):
+    """ return a map of VCFs for multiprocessing """
     vcfs=[]
     files = os.listdir(os.path.join(run_dir, 'ncovIllumina_sequenceAnalysis_callVariants'))
     for vcf in [f for f in files if f.endswith(".tsv")]:
@@ -51,7 +58,7 @@ def getVCFMap(run_dir):
 
 
 def runArctic(run_dir, worklist):
-    """ run the NF pipeline """
+    """ run the Arctic NF pipeline """
     ref = settings.ARCTIC_RESOURCE + settings.ARCTIC_REF
     arctic_out = os.path.join(run_dir, 'ncov2019-arctic-nf')
     cmd = "NXF_VER=20.10.0 NXF_WORK=/tmp "
@@ -74,6 +81,8 @@ def runArctic(run_dir, worklist):
 
 
 def createRunFasta(run_dir, worklist):
+    """ Combine all Fastas into single file 
+    output into run_dir using BASH shell """
     cmd = 'cat '+ os.path.join(run_dir, 'ncovIllumina_sequenceAnalysis_makeConsensus', '*fa')
     cmd += ' > '+  os.path.join(run_dir, worklist+'.fa')
     print (cmd)
@@ -81,18 +90,16 @@ def createRunFasta(run_dir, worklist):
 
 
 def runPangolinDocker(run_dir, worklist):
-    cmd = 'docker run -v '+run_dir+'/:/test/ --rm'
+    """ 
+    check for updates and run Pangolin
+    using Docker 
+    Creates <worklist>_lineage_report.csv
+    """
+    cmd = 'docker run -v '+run_dir+'/:/test/ --rm '
     cmd += settings.PANGOLIN_DOCKER+' bash -c "' 
-    cmd += 'pangolin --update && pangolin /test/'+worklist+'.fa'
+    cmd += 'pangolin --update && pangolin /test/'+worklist+'.fa '
     cmd += '--outfile /test/'+worklist+'_lineage_report.csv"'
     print (cmd)
-    subprocess.run(cmd, shell=True, executable='/bin/bash')
-
-
-def prepareFastas(run_dir, worklist):
-    fa_dir=os.path.join(run_dir, "ncovIllumina_sequenceAnalysis_makeConsensus")
-    cmd['cat', os.path.join(fa_dir,'*fa'), '>', 
-        os.path.join(fa_dir, worklist+'_all.fa')]
     subprocess.run(cmd, shell=True, executable='/bin/bash')
 
 
@@ -223,17 +230,18 @@ if __name__ == "__main__":
 
     ss = loadSS(run)
     # Run Pipeline
-    demux(run)
-    arctic_dir = runArctic(run, wl)
+    #RunBCL2fastq(run)
+    #arctic_dir = runArctic(run, wl)
+    arctic_dir=run+"/ncov2019-arctic-nf"
     # Run extra annotation and QC
     createRunFasta(arctic_dir, wl)
-    runPangolinDocker(arctic_dir, wl)
+    #runPangolinDocker(arctic_dir, wl)
     bammap = getBamMap(arctic_dir)
     famap = getFaMap(arctic_dir)
     vcfmap = getVCFMap(arctic_dir)
-    multithread(runPicard, 48, bammap)
-    for fa in famap:  # NextClade is already multithreaded
-        runNextClade(fa)
+    #multithread(runPicard, 48, bammap)
+    #for fa in famap:  # NextClade is already multithreaded
+    #    runNextClade(fa)
     # Parse in all datasets
     picard = parsePicard(bammap)
     nextc = parseNextCladeQC(famap)
@@ -241,6 +249,7 @@ if __name__ == "__main__":
     pang = parsePangolin(arctic_dir, wl)
     E484K = parseVCFsForLocus(vcfmap, 23012, "E484K", 'A')
     # output final reports
+    winpath.lineage2ABI(ss, arctic_dir, wl)
     data = makeReport(ss, arctic, picard, pang, nextc, E484K, arctic_dir, wl)
     makeLocalReport(data, arctic_dir, wl)
 

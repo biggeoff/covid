@@ -1,4 +1,4 @@
-## OCARINA
+#!/usr/bin/python3
 import os
 import subprocess
 from glob import glob
@@ -35,9 +35,6 @@ def putSequencing(worklist, run, std, err, starttime='', endtime='', flowcell=''
     err.flush()
     proc = subprocess.Popen(cmd, shell=True, stdout=std, stderr=err)
     proc.wait()
-    #result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-    #std.write(result.stdout)
-    #err.write(result.stderr)
 
 
 def findCases(arctic_dir, subdir):
@@ -49,15 +46,6 @@ def findCases(arctic_dir, subdir):
     parsed = [c for c in cases if not c.startswith("Pos")] # remove postive controls
     return cases
 
-
-# get args
-# find all cases in climb folder
-# if mode == ocarina:
-    # foreach sample put library
-    # put sequencing
-# if mode == csv:
-    # foreach sample create line in csv 
-    # output csv
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

@@ -186,7 +186,12 @@ naaaavi generate --alphabet zbase32 --checksum luhn_mod_n --size 6 --rejectors m
 ```
 Deleted the first row! (as it is a duplicate of the final row of the last batch)
 
-
+### 29/04/2021
+third batch
+```
+naaaavi generate --alphabet zbase32 --checksum luhn_mod_n --size 6 --rejectors max_repeats:2 min_unique:3 ismp_flips: better_profanity: not_exclusive:0123456789aAbBcCdDeEfF --prefix 'PHESW-' --upper -n 501 --start-code PHESW-YYBY9F > PHESW_third_500_codes.tsv
+```
+Deleted the first row! (as it is a duplicate of the final row of the last batch)
 
 # Ocarina
 
