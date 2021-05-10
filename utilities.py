@@ -35,7 +35,7 @@ def regorgArcticForUpload(arctic, worklist, run):
     removeAfterDelim(subdirs, delim='-', count=1)
 
 
-def copyToSampleNet(abi)
+def copyToSampleNet(abi):
     """ Copy ABI formatted results into
     WinPath ingest area for automated
     upload to PHE/Pathology LIMS """

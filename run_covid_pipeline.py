@@ -220,7 +220,7 @@ def printFinalMessage():
     \n BGL / PHESW COVID Wrapper Script has completed....
     \n============================================================
     \n... don't forget to download a new token from Majora:
-    \n\t•\thttps://majora.covid19.climb.ac.uk/keys/list/
+    \n\t*\thttps://majora.covid19.climb.ac.uk/keys/list/
     \n1. Save the token here: ~/ocarina
     \n2. Run the upload: ocarina_API.py \n{}""".format(settings.OCARINA)
     print(message)
@@ -234,7 +234,7 @@ if __name__ == "__main__":
     Two reports are output with a row per sample.
     """
     parser = argparse.ArgumentParser()
-	parser.add_argument("-d", "--demux", help="Demultiplex BCLs to create fastq files", action="store_true", required=False)
+    parser.add_argument("-d", "--demux", help="Demultiplex BCLs to create fastq files", action="store_true", required=False)
     parser.add_argument("-r", "--run_dir", nargs=1, type=str, help="full path to Illumina run folder", required=True)
     parser.add_argument("-w", "--worklist", nargs=1, type=str, help="Name of the run/worklist", required=True)
     args = parser.parse_args()
@@ -274,17 +274,17 @@ if __name__ == "__main__":
     makeLocalReport(data, arctic_dir, wl)
 
     # Copy data to all network locations
-    utilities.regorgArcticForUpload(arctic_dir, wl, illumina)
+    #utilities.regorgArcticForUpload(arctic_dir, wl, illumina)
     # copy to sample net
-    utilities.copyToSamplenet(abi_file)
+    #utilities.copyToSamplenet(abi_file)
     # copy to COG-UK
-    utilities.copyToPHE(arctic_dir, worklist)
+    #utilities.copyToPHE(arctic_dir, worklist)
     # COPY to L -- can't do this without sudo (need to remount)
     #utilities.copyToNGSDATA(arctic_dir, worklist)
     # Secure cOPY the data to the CLIMB servers in Birmingham
-    utilities.scpCLIMB(arctic_dir, illumina)
+    #utilities.scpCLIMB(arctic_dir, illumina)
     # Print reminder to UPLOAD to Majora
-    printFinalMessage()
+    #printFinalMessage()
 
 
 
