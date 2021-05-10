@@ -3,6 +3,7 @@ import argparse
 import subprocess
 from glob import glob
 import settings
+from shutil import copy2
 
 
 def renameSubdir(arctic_dir, worklist, illumina):
@@ -23,51 +24,54 @@ def getCLIMBsubdirs(climb_dir):
 def removeAfterDelim(subdirs, delim='_'):
     """ remove the suffix after the case name """
     for sd in subdirs:
-        path = '/'.join(sd.strip('/').split('/')[:-1])
-        bits = sd.strip('/').split('/')[-1]
+        path = '/'.join(sd.rstrip('/').split('/')[:-1])
+        bits = sd.rstrip('/').split('/')[-1].split(delim)
         if len(bits) > 2: # PHESW-XXXXXXX
             new = os.path.join(path, delim.join(bits[0:1]))
             os.rename(sd, new)
             print('renaming: {} -> {}'.format(sd, new))
 
 
-def regorgArcticForUpload(arctic, worklist, run):
+def reorganiseForCLIMB(arctic, worklist, run):
     """ Previously __main__ """
     climb_dir = renameSubdir(arctic, worklist, run)    
     subdirs = getCLIMBsubdirs(climb_dir)
-    removeAfterDelim(subdirs, delim='-', count=1)
-    return climb_folder
+    removeAfterDelim(subdirs, delim='-')
+    return climb_dir
 
 
 def copyToSampleNet(abi):
     """ Copy ABI formatted results into
     WinPath ingest area for automated
     upload to PHE/Pathology LIMS """
-    shutil.copy(abi, settings.SAMPLENET)
+    copy2(abi, settings.SAMPLENET)
     print ("\nUploaded {} to Winpath LIMS: {}\n".format(abi, settings.SAMPLENET))
 
 
 def copyToPHE(arctic_dir, worklist):
     """ Create a new directory under the worklist
     and copy run data to PHE area of the L drive """
-    cmd="mkdir /mnt/cog-uk/Sequencing_Results/Local_Sequencing_Results/{}"
+    dest="/mnt/cog-uk/Sequencing_Results/Local_Sequencing_Results/{}".format(worklist)
+    if not os.path.exists(dest):
+        os.mkdir(dest)
+    print ("\nCopying Data to COG-UK area of L drive.....\n")
+    cmd="rsync -azvP {}/ {}/".format(arctic_dir, dest)
     subprocess.run(cmd, shell=True, executable='/bin/bash')
-    cmd="rsync -azvP {}/ /mnt/cog-uk/Sequencing_Results/Local_Sequencing_Results/{}/".format(arctic_dir, worklist)
-    subprocess.run(cmd, shell=True, executable='/bin/bash')
-    print ("\nData copied to COG-UK area of L drive\n")
 
 
 def copyToNGSDATA(arctic_dir, worklist):
     """ Copy to Genetics NGS analysis area """
-    cmd="mkdir /mnt/NGS_DATA_at_Bristol/COVID/{}".format(arctic_dir, worklist)
+    dest="/mnt/NGS_DATA_at_Bristol/COVID/{}".format(worklist)
+    if not os.path.exists(dest):
+        os.mkdir(dest)
+    print ("\n Copying data to NGS_DATA_at_Bristol...\n")
+    cmd="rsync -azvP {}/ {}/".format(arctic_dir, dest)
     subprocess.run(cmd, shell=True, executable='/bin/bash')
-    cmd="rsync -azvP {}/ /mnt/NGS_DATA_at_Bristol/COVID/{}".format(arctic_dir, worklist)
-    subprocess.run(cmd, shell=True, executable='/bin/bash')
-    print ("\n Run copied to NGS_DATA_at_Bristol\n")
 
 
 def scpCLIMB(climb_dir):
     """ Upload to CLIMB servers in Birmingham """
-    cmd = "scp -r {} climb-covid19-woodwardg@bham.covid19.climb.ac.uk:upload/.".format(climb_dir.strip('/'))
+    cmd = "scp -r {} {}@{}:upload/.".format(climb_dir.rstrip('/'),
+        settings.CLIMB_USER, settings.CLIMB_URL)
     subprocess.run(cmd, shell=True, executable='/bin/bash')
     print ("\n Run copied to CLIMB: bham.covid19.climb.ac.uk:upload \n")
