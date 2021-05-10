@@ -71,3 +71,4 @@ def lineage2ABI(ss, run, worklist):
     data = loadLineage(lineage)
     parsed = parse2winpath(data, ss)
     emitCSV(parsed, output)
+    return output

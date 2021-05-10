@@ -6,6 +6,7 @@ from multiprocessing.dummy import Pool
 import argparse
 import pandas as pd
 import settings
+import utilities
 import winpath
 
 
@@ -214,6 +215,18 @@ def makeLocalReport(df, outdir, worklist):
     print("Report saved here:\n\t - {}".format(outfile))
 
 
+def printFinalMessage():
+    message = """============================================================
+    \n BGL / PHESW COVID Wrapper Script has completed....
+    \n============================================================
+    \n... don't forget to download a new token from Majora:
+    \n\t•\thttps://majora.covid19.climb.ac.uk/keys/list/
+    \n1. Save the token here: ~/ocarina
+    \n2. Run the upload: ocarina_API.py \n{}""".format(settings.OCARINA)
+    print(message)
+
+
+
 if __name__ == "__main__":
     """
     Script to run Arctic pipeline & generate extra QC information on COVID libraries:
@@ -221,35 +234,57 @@ if __name__ == "__main__":
     Two reports are output with a row per sample.
     """
     parser = argparse.ArgumentParser()
+	parser.add_argument("-d", "--demux", help="Demultiplex BCLs to create fastq files", action="store_true", required=False)
     parser.add_argument("-r", "--run_dir", nargs=1, type=str, help="full path to Illumina run folder", required=True)
     parser.add_argument("-w", "--worklist", nargs=1, type=str, help="Name of the run/worklist", required=True)
     args = parser.parse_args()
     run = args.run_dir[0]
+    illumina = run.strip('/').split('/')[-1]
     wl = args.worklist[0]
     arctic_dir = run+"/ncov2019-arctic-nf/"
 
-    ss = loadSS(run)
     # Run Pipeline
-    #RunBCL2fastq(run)
-    #arctic_dir = runArctic(run, wl)
+    ss = loadSS(run)
+    if args.demux:
+        RunBCL2fastq(run)
+    
+    arctic_dir = runArctic(run, wl)
     arctic_dir=run+"/ncov2019-arctic-nf"
+    
     # Run extra annotation and QC
     createRunFasta(arctic_dir, wl)
-    #runPangolinDocker(arctic_dir, wl)
+    runPangolinDocker(arctic_dir, wl)
     bammap = getBamMap(arctic_dir)
     famap = getFaMap(arctic_dir)
     vcfmap = getVCFMap(arctic_dir)
-    #multithread(runPicard, 48, bammap)
-    #for fa in famap:  # NextClade is already multithreaded
-    #    runNextClade(fa)
+    multithread(runPicard, 48, bammap)
+    for fa in famap:  # NextClade is already multithreaded
+        runNextClade(fa)
+    
     # Parse in all datasets
     picard = parsePicard(bammap)
     nextc = parseNextCladeQC(famap)
     arctic = parseArcticQC(arctic_dir, wl)
     pang = parsePangolin(arctic_dir, wl)
     E484K = parseVCFsForLocus(vcfmap, 23012, "E484K", 'A')
+    
     # output final reports
-    winpath.lineage2ABI(ss, arctic_dir, wl)
+    abi_file = winpath.lineage2ABI(ss, arctic_dir, wl)
     data = makeReport(ss, arctic, picard, pang, nextc, E484K, arctic_dir, wl)
     makeLocalReport(data, arctic_dir, wl)
+
+    # Copy data to all network locations
+    utilities.regorgArcticForUpload(arctic_dir, wl, illumina)
+    # copy to sample net
+    utilities.copyToSamplenet(abi_file)
+    # copy to COG-UK
+    utilities.copyToPHE(arctic_dir, worklist)
+    # COPY to L -- can't do this without sudo (need to remount)
+    #utilities.copyToNGSDATA(arctic_dir, worklist)
+    # Secure cOPY the data to the CLIMB servers in Birmingham
+    utilities.scpCLIMB(arctic_dir, illumina)
+    # Print reminder to UPLOAD to Majora
+    printFinalMessage()
+
+
 
