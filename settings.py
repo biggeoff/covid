@@ -17,6 +17,9 @@ PICARD_JAR = "/picard-tools-1.67/CollectInsertSizeMetrics.jar"
 SAMPLENET = "/mnt/PHEfftransfer/ABI7500_1/"
 PHE = "/mnt/cog-uk/Sequencing_Results/Local_Sequencing_Results/"
 
+CLIMB_USER = "climb-covid19-woodwardg"
+CLIMB_URL = "bham.covid19.climb.ac.uk"
+
 OCARINA = """                                 .@ 888S
                             ;@S8888:8%tX
  :XS.                 .;8: @8t88888t8888
