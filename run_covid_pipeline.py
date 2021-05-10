@@ -186,7 +186,6 @@ def parseVCFsForLocus(vcfmap, locus, locus_name, allele):
     return matches
 
 
-
 def multithread(mymethod, poolsize, maplist):
     pool = Pool(poolsize)
     pool.map(mymethod, maplist)
@@ -239,7 +238,7 @@ if __name__ == "__main__":
     parser.add_argument("-w", "--worklist", nargs=1, type=str, help="Name of the run/worklist", required=True)
     args = parser.parse_args()
     run = args.run_dir[0]
-    illumina = run.strip('/').split('/')[-1]
+    illumina = run.rstrip('/').split('/')[-1]
     wl = args.worklist[0]
     arctic_dir = run+"/ncov2019-arctic-nf/"
 
@@ -248,18 +247,18 @@ if __name__ == "__main__":
     if args.demux:
         RunBCL2fastq(run)
     
-    arctic_dir = runArctic(run, wl)
+    #arctic_dir = runArctic(run, wl)
     arctic_dir=run+"/ncov2019-arctic-nf"
     
     # Run extra annotation and QC
     createRunFasta(arctic_dir, wl)
-    runPangolinDocker(arctic_dir, wl)
+    #runPangolinDocker(arctic_dir, wl)
     bammap = getBamMap(arctic_dir)
     famap = getFaMap(arctic_dir)
     vcfmap = getVCFMap(arctic_dir)
-    multithread(runPicard, 48, bammap)
-    for fa in famap:  # NextClade is already multithreaded
-        runNextClade(fa)
+    #multithread(runPicard, 48, bammap)
+    #for fa in famap:  # NextClade is already multithreaded
+    #    runNextClade(fa)
     
     # Parse in all datasets
     picard = parsePicard(bammap)
@@ -274,17 +273,17 @@ if __name__ == "__main__":
     makeLocalReport(data, arctic_dir, wl)
 
     # Copy data to all network locations
-    #utilities.regorgArcticForUpload(arctic_dir, wl, illumina)
+    climb_dir = utilities.reorganiseForCLIMB(arctic_dir, wl, illumina)
     # copy to sample net
-    #utilities.copyToSamplenet(abi_file)
+    utilities.copyToSampleNet(abi_file)
     # copy to COG-UK
-    #utilities.copyToPHE(arctic_dir, worklist)
-    # COPY to L -- can't do this without sudo (need to remount)
-    #utilities.copyToNGSDATA(arctic_dir, worklist)
-    # Secure cOPY the data to the CLIMB servers in Birmingham
-    #utilities.scpCLIMB(arctic_dir, illumina)
+    utilities.copyToPHE(arctic_dir, wl)
+    # COPY to L -- not required anymore!
+    #utilities.copyToNGSDATA(arctic_dir, wl)
+    # Secure COPY the data to the CLIMB servers in Birmingham
+    utilities.scpCLIMB(climb_dir)
     # Print reminder to UPLOAD to Majora
-    #printFinalMessage()
+    printFinalMessage()
 
 
 

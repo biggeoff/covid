@@ -651,3 +651,29 @@ scp -r ncov2019-arctic-nf/qc_pass_climb_upload/210422_M03605_0254_000000000-JLWL
 
 python3 ~/sandpit/covid-extras/ocarina_API.py -a ${PWD}/ncov2019-arctic-nf -d 210422_M03605_0254_000000000-JLWLK -w 20210419
 ```
+
+# Test new wrapper script!!
+
+## New Features
+
+Copy the data to 484
+```bash
+rsync -azvP --include "*/" --include "*xml" --include "*csv" --include "*txt" --include "*bin" --include "*locs" --include "*fastq.gz" --exclude "*" /mnt/L/Molecular-genetics-analyser/MiSeqOutput2/210507_M03605_0262_000000000-JMF5P /largedata/share/MiSeqOutput2/
+```
+
+since we have fastqs we don't need the `-d/--demux` switch:
+
+```bash
+geoffw@nbsvr484:210507_M03605_0262_000000000-JMF5P$ python3 ~/sandpit/covid-extras/run_covid_pipeline.py -r ${PWD} -w 20210430.1-20210505.1
+```
+
+AMAZING!!!!
+Data copied everywhere
+
+finish up with Ocarina:
+
+```bash
+geoffw@nbsvr484:210507_M03605_0262_000000000-JMF5P$ python3 ~/sandpit/covid-extras/ocarina_API.py -a ${PWD}/ncov2019-arctic-nf -d 210507_M03605_0262_000000000-JMF5P -w 20210430.1-20210505.1 
+```
+
+STREAMLINE!!!!!!!!!!
