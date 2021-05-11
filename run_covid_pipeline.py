@@ -246,19 +246,18 @@ if __name__ == "__main__":
     ss = loadSS(run)
     if args.demux:
         RunBCL2fastq(run)
-    
-    #arctic_dir = runArctic(run, wl)
-    arctic_dir=run+"/ncov2019-arctic-nf"
+  
+    arctic_dir = runArctic(run, wl)
     
     # Run extra annotation and QC
     createRunFasta(arctic_dir, wl)
-    #runPangolinDocker(arctic_dir, wl)
+    runPangolinDocker(arctic_dir, wl)
     bammap = getBamMap(arctic_dir)
     famap = getFaMap(arctic_dir)
     vcfmap = getVCFMap(arctic_dir)
-    #multithread(runPicard, 48, bammap)
-    #for fa in famap:  # NextClade is already multithreaded
-    #    runNextClade(fa)
+    multithread(runPicard, 48, bammap)
+    for fa in famap:  # NextClade is already multithreaded
+        runNextClade(fa)
     
     # Parse in all datasets
     picard = parsePicard(bammap)

@@ -1,0 +1,8 @@
+# PHE winpath SampleNet
+########################
+//10.229.254.200/fftransfer /mnt/PHEfftransfer cifs vers=1.0,credentials=/home/geoffw/.fftransfer_creds,iocharset=utf8,sec=ntlm,uid=1000,gid=1000,forceuid,forcegid,file_mode=0775,dir_mode=0775,noperm 0 0
+
+
+# COG-UK shared drive
+########################
+//isilon-maindc-access/coreclindir/COG-UK /mnt/cog-uk cifs vers=1.0,credentials=/home/geoffw/.smbcredentialsME,iocharset=utf8,uid=1000,gid=1000,forceuid,forcegid,file_mode=0775,dir_mode=0775,noperm 0 0
