@@ -149,7 +149,7 @@ def emitABItxt(df, outfile):
 def copyToSampleNet(abi):
     try:
         copyfile(abi,
-            "/mnt/PHEwinpath/fftransfer/ABI7500_1/{}".format(abi)) 
+            "/mnt/PHEfftransfer/ABI7500_1/{}".format(abi)) 
     except: 
         print("Error occurred while copying file.") 
 
@@ -171,7 +171,8 @@ if __name__ == "__main__":
     final = new.append(deleted)
     final.to_csv(newfile.replace('.csv','_with_IDs.csv'), index=False)
 
-    abi = parseNew2winpath(final)
-    emitABItxt(abi, newfile.replace('.csv','_for_ABI.txt'))
+    abi_df = parseNew2winpath(final)
+    abi_out = newfile.replace('.csv','_for_ABI.txt')
+    emitABItxt(abi_df, abi_out)
 
-    #copyToSampleNet(newfile.replace('.csv','_for_ABI.txt'))
+    copyToSampleNet(abi_out)
