@@ -10,7 +10,6 @@ ARCTIC_RESOURCE = "/fastdata/ncov2019-arctic/nCoV-2019/V3/"
 
 NEXTCLADE_DOCKER = "nextstrain/nextclade"
 PANGOLIN_DOCKER = "staphb/pangolin:latest"
-
 PICARD_DOCKER = "geoffw/picard1.67"
 PICARD_JAR = "/picard-tools-1.67/CollectInsertSizeMetrics.jar"
 

@@ -15,7 +15,7 @@ All data is then parsed to create three output reports:
 Pipeline data is sent to endpoints locally:
 1. /mnt/PHEfftransfer/ABI7500_1/ 
     > ABI file is deposited here for upload to WinPath LIMS
-2. /mnt/cog-uk/Sequencing_Results/Local_Sequencing_Results/]
+2. /mnt/cog-uk/Sequencing_Results/Local_Sequencing_Results/
     > The entire run folder is deposited in the PHE area of Trust storage
 
 The wrapper script automatically processes the output directories to prepare them for upload to CLIMB-UK and uses `scp` to upload the run to the following endpoint. This requires an account and `ssh` key. 
@@ -23,9 +23,9 @@ The wrapper script automatically processes the output directories to prepare the
 
 ### Running the wrapper
 
-The wrapper script is executbale and uses the `usr/bin/python3.7` interpretter. To launch just type `covid` on the bash cli. It is recommended that you change directory into the run folder and use `${PWD}` to define the `-r/--run-dir` switch
+The wrapper script is executable and uses the `usr/bin/python3.7` interpreter. To launch just type `covid` on the bash cli. It is recommended that you change directory into the run folder and use `${PWD}` to define the `-r/--run-dir` switch. If the run hasn't been demultiplexed make sure to use the `-d/--demux` switch. Finally supply the worklist with the `-w/--worklist` switch, for example: `-w 20210430.1-20210505.1`
 ```bash
-covid –-help
+$ covid –-help
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -34,9 +34,28 @@ optional arguments:
                         full path to Illumina run folder
   -w WORKLIST, --worklist WORKLIST
                         Name of the run/worklist
+
+$ covid -r ${PWD} -w 20210430.1-20210505.1
 ```
 
-### To run Metadata upload to Majora:
+### Updating Metadata on Majora:
+
+Again this script is executable and uses the `usr/bin/python3.7` interpreter. To launch just type `updatemaj` on the bash cli. It is recommended that you change directory into the run folder and use `${PWD}/ncov2019-arctic-nf ` to define the `-a/--arctic` switch. Sse the `-d/--subdir` switch to define the run name on Majora, for example `-d 210507_M03605_0262_000000000-JMF5P` . Finally supply the worklist with the `-w/--worklist` switch, for example: `-w 20210430.1-20210505.1`
 ```bash
-soemthing
+$ updatemaj --help
+usage: ocarina_API.py [-h] -a ARCTIC -d SUBDIR -w WORKLIST
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -a ARCTIC, --arctic ARCTIC
+                        full path to arctic output folder
+  -d SUBDIR, --subdir SUBDIR
+                        subdir to be uploaded to climb (miseq run)
+  -w WORKLIST, --worklist WORKLIST
+                        Name of the run/worklist
+
+$ updatemaj -a ${PWD}/ncov2019-arctic-nf -d 210507_M03605_0262_000000000-JMF5P -w 20210430.1-20210505.1 
 ```
+
+> Please refer to QPulse SOP 25.9 for the full operating instructions and information surrounding this pipeline.
+
